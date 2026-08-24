@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- ===== Primary SEO ===== -->
+  <!-- TODO: Deploy ke baad har "https://ottle.onrender.com" ko apne live domain se replace kar dena -->
+  <title>Ottle — Publish. Read. Connect. | eBook Publishing & Social Platform for Writers</title>
+  <meta name="description" content="Ottle is the modern home for independent storytellers — publish eBooks free, sell in the marketplace, grow readers on a social feed, and write books chapter-by-chapter with cover designer & AI Studio." />
+  <meta name="keywords" content="eBook publishing, self publishing platform, indie authors, write a book online, free ebook marketplace, book writing software, publish ebook free, storytelling community, reader social network, Ottle" />
+  <meta name="author" content="Ottle" />
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+  <meta name="googlebot" content="index, follow" />
+  <meta name="theme-color" content="#1c2950" />
+  <meta name="rating" content="general" />
+  <meta name="application-name" content="Ottle" />
+  <link rel="canonical" href="https://ottle.onrender.com/" />
+
+  <!-- ===== Open Graph (Facebook/WhatsApp/LinkedIn share preview) ===== -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Ottle" />
+  <meta property="og:title" content="Ottle — Publish. Read. Connect." />
+  <meta property="og:description" content="Publish your eBook free, build a reader following, and write with chapter tools + covers — the all-in-one home for independent storytellers." />
+  <meta property="og:url" content="https://ottle.onrender.com/" />
+  <meta property="og:image" content="https://ottle.onrender.com/logo.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:locale" content="en_US" />
+
+  <!-- ===== Twitter Card ===== -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Ottle — Publish. Read. Connect." />
+  <meta name="twitter:description" content="The modern home for independent storytellers. Free eBook publishing, marketplace, and a social feed for writers." />
+  <meta name="twitter:image" content="https://ottle.onrender.com/logo.jpg" />
+
+  <!-- ===== Icons ===== -->
+  <link rel="icon" type="image/jpeg" href="./logo.jpg" />
+  <link rel="apple-touch-icon" href="./logo.jpg" />
+
+  <!-- ===== Structured Data (Google rich results) ===== -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "Ottle",
+    "alternateName": "Ottle — eBook Publishing & Social Platform",
+    "url": "https://ottle.onrender.com/",
+    "description": "Publish eBooks free, sell in the marketplace, grow readers socially.",
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": "https://ottle.onrender.com/?q={search_term_string}",
+      "query-input": "required name=search_term_string"
+    }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "Ottle",
+    "url": "https://otle.onrender.com/",
+    "logo": "https://ottle.onrender.com/logo.jpg",
+    "sameAs": []
+  }
+  </script>
+
+  <!-- ===== Fonts & libs ===== -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+            display: ['Outfit', 'Inter', 'ui-sans-serif', 'sans-serif'],
+            serif: ['Georgia', 'ui-serif', 'serif']
+          },
+          colors: {
+            navy: { 50:'#f0f3f9',100:'#dae1f0',200:'#b9c7e2',300:'#8da3cf',400:'#5c79b5',500:'#3a5496',600:'#2d4078',700:'#243460',800:'#1c2950',900:'#15203f',950:'#0d1429' },
+            cream: { 50:'#fdfcf9',100:'#faf6ee',200:'#f3ebd9',300:'#e9d9bd',400:'#dcbf95',500:'#cf9f6b',600:'#bb7f4c',700:'#9c6240',800:'#7e4f37',900:'#684230' },
+            amber: { 400:'#fbbf55',500:'#f5a623',600:'#e08e0b' }
+          },
+          keyframes: {
+            fadeIn:{'0%':{opacity:0,transform:'translateY(8px)'},'100%':{opacity:1,transform:'translateY(0)'}},
+            slideUp:{'0%':{opacity:0,transform:'translateY(20px)'},'100%':{opacity:1,transform:'translateY(0)'}},
+            scaleIn:{'0%':{opacity:0,transform:'scale(0.96)'},'100%':{opacity:1,transform:'scale(1)'}},
+            pulseRing:{'0%':{boxShadow:'0 0 0 0 rgba(245,166,35,0.5)'},'70%':{boxShadow:'0 0 0 10px rgba(245,166,35,0)'},'100%':{boxShadow:'0 0 0 0 rgba(245,166,35,0)'}},
+            blink:{'0%,100%':{opacity:1},'50%':{opacity:0}},
+            floatBlob:{'0%,100%':{transform:'translateY(0) scale(1)'},'50%':{transform:'translateY(-22px) scale(1.05)'}},
+            viewIn:{'0%':{opacity:0,transform:'translateY(14px) scale(.99)'},'100%':{opacity:1,transform:'none'}}
+          },
+          animation: {
+            fadeIn:'fadeIn 0.4s ease-out', slideUp:'slideUp 0.5s ease-out', scaleIn:'scaleIn 0.25s ease-out',
+            pulseRing:'pulseRing 1.8s infinite', blink:'blink 1s step-end infinite', floatBlob:'floatBlob 8s ease-in-out infinite',
+            viewIn:'viewIn 0.45s cubic-bezier(.2,.7,.2,1)'
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="./css/styles.css" />
+  <script src="https://checkout.razorpay.com/v1/checkout.js" defer></script>
+</head>
+<body class="bg-cream-100 text-navy-900 dark:bg-navy-950 dark:text-cream-100 theme-transition min-h-screen font-sans">
+  <div id="root"></div>
+  <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] hidden"></div>
+  <noscript><p style="text-align:center;padding:2rem">Ottle needs JavaScript enabled — the platform for independent storytellers to publish, read and connect.</p></noscript>
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>
