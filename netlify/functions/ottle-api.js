@@ -103,7 +103,12 @@ exports.handler = async (event) => {
       const code = String(crypto.randomInt(0, 1000000)).padStart(6, "0");
       const hash = otpHash(email, code);
       const exp = Math.floor(Date.now() / 1000) + 600; // 10 min
-      await fsCreate("otps", hash, { exp: { integerValue: String(exp) } });
+      const created = await fsCreate("otps", hash, { exp: { integerValue: String(exp) } });
+      if (!created.ok)
+        return j(created.status === 403 ? 500 : 500,
+          { sent: false, message: created.status === 403
+              ? "Storage blocked: publish the LATEST firestore.rules (otps section)."
+              : "Could not store code. Try again." });
       await fsCreate("otpMeta", metaId, { lastSent: { integerValue: String(Math.floor(Date.now() / 1000)) } });
 
       const sent = await brevoSend(email,
@@ -120,6 +125,8 @@ exports.handler = async (event) => {
       if (!email || !/^\d{6}$/.test(code)) return j(400, { ok: false, message: "Enter the 6-digit code." });
       const hash = otpHash(email, code);
       const doc = await fsGet(`otps/${hash}`);
+      if (doc.status === 403)
+        return j(500, { ok: false, message: "Storage blocked: publish the LATEST firestore.rules." });
       if (!doc.ok) return j(400, { ok: false, remaining: 4, message: "Wrong code." });
       const exp = Number(doc.data?.fields?.exp?.integerValue || 0);
       if (exp < Math.floor(Date.now() / 1000)) {

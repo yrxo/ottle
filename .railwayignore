@@ -1,0 +1,6 @@
+.env
+demo_codes.log
+railway.exe
+.git/
+__pycache__/
+Ottle.bat
