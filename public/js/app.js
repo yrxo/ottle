@@ -123,6 +123,46 @@ function fileToDataUrl(file, max = 256, quality = 0.8) {
   });
 }
 
+window.downloadBookPDF = async (bookId) => {
+  try {
+    const book = await store.getBookById(bookId);
+    const chapters = await store.getChapters(bookId);
+    if (!book) return toast("Book not found");
+    const { jsPDF } = window.jspdf || {};
+    if (!jsPDF) {
+      // fallback: download as text
+      const text = `${book.title}\nby ${book.ownerName}\n\n${chapters.map((c,i)=>`Chapter ${i+1}: ${c.title}\n${c.content||""}`).join("\n\n")}`;
+      const blob = new Blob([text], {type:"text/plain"});
+      const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `${book.title}.txt`; a.click(); return;
+    }
+    const doc = new jsPDF();
+    doc.setFont("helvetica","bold"); doc.setFontSize(18); doc.text(book.title, 10, 15);
+    doc.setFont("helvetica","normal"); doc.setFontSize(10); doc.text(`by ${book.ownerName || ""} • ${book.genre || ""}`, 10, 22);
+    let y = 30;
+    for (let i=0;i<chapters.length;i++) {
+      const c = chapters[i];
+      if (y > 270) { doc.addPage(); y = 15; }
+      doc.setFont("helvetica","bold"); doc.setFontSize(12); doc.text(`Chapter ${i+1}: ${c.title}`, 10, y); y+=7;
+      doc.setFont("helvetica","normal"); doc.setFontSize(10);
+      const lines = doc.splitTextToSize(c.content || "No content yet.", 190);
+      for (const line of lines) { if (y > 282) { doc.addPage(); y = 15; } doc.text(line, 10, y); y+=5; }
+      y+=6;
+      // save offline
+      localStorage.setItem(`ottle_offline_${bookId}`, JSON.stringify({book, chapters}));
+    }
+    doc.save(`${book.title}.pdf`);
+    toast("PDF downloaded • Saved offline ✓");
+  } catch(e){ toast("Could not generate PDF"); }
+};
+window.saveOffline = async (bookId) => {
+  try {
+    const book = await store.getBookById(bookId);
+    const chapters = await store.getChapters(bookId);
+    localStorage.setItem(`ottle_offline_${bookId}`, JSON.stringify({book, chapters, savedAt: Date.now()}));
+    toast("Saved offline ✓");
+  } catch(e){ toast("Offline save failed"); }
+};
+
 /* ---------- Styled prompt/confirm (native dialogs ki jagah) ---------- */
 function ottlePrompt({ title, value = "", placeholder = "", okText = "Create" } = {}) {
   return new Promise((resolve) => {
@@ -255,36 +295,38 @@ function renderOnboarding(root, user, profile) {
     const hasAns = q.type === "multi" ? (answers[q.id]?.length > 0) : !!answers[q.id];
 
     root.innerHTML = `
-    <div class="min-h-screen bg-gradient-to-br from-cream-50 via-white to-cream-100 dark:from-navy-950 dark:via-navy-900 dark:to-navy-950 flex flex-col">
-      <div class="h-1.5 bg-cream-200 dark:bg-navy-800">
-        <div class="h-full bg-gradient-to-r from-amber-400 to-amber-500 transition-all duration-500" style="width:${progress}%"></div>
+    <div class="min-h-screen bg-[#fff9fb] dark:from-navy-950 dark:via-navy-900 dark:to-navy-950 flex flex-col">
+      <div class="h-1 bg-cream-100 dark:bg-navy-800">
+        <div class="h-full bg-sage-500 transition-all duration-500" style="width:${progress}%"></div>
       </div>
       <div class="flex-1 flex items-center justify-center p-4 sm:p-6">
         <div class="w-full max-w-xl animate-scaleIn">
-          <div class="text-center mb-6">
-            <img src="./logo.png" alt="Ottle" class="w-12 h-12 mx-auto mb-3 object-contain">
-            <p class="text-xs tracking-[0.2em] text-amber-600 dark:text-amber-400 font-semibold">STEP ${step + 1} OF ${total}</p>
-            <h2 class="text-2xl sm:text-3xl font-display font-extrabold mt-2 leading-tight">${q.q}</h2>
-            <p class="text-sm text-navy-500 dark:text-cream-300/70 mt-2">${q.sub}</p>
+          <div class="text-center mb-7">
+            <div class="w-12 h-12 mx-auto mb-4 rounded-2xl bg-white shadow-sm border border-sage-100 flex items-center justify-center p-1.5">
+              <img src="./logo.png" alt="Ottle" class="w-full h-full object-contain">
+            </div>
+            <p class="text-[11px] tracking-[0.18em] text-sage-600 font-semibold">STEP ${step + 1} / ${total}</p>
+            <h2 class="text-[22px] sm:text-[26px] font-display font-bold mt-2 leading-tight text-navy-900 dark:text-white">${q.q}</h2>
+            <p class="text-[13px] text-navy-500 dark:text-cream-300/60 mt-2 font-light">${q.sub}</p>
           </div>
-          <div class="${q.type === 'multi' ? 'grid grid-cols-2 gap-3' : 'space-y-3'} mb-6">
+          <div class="${q.type === 'multi' ? 'grid grid-cols-2 gap-3' : 'space-y-2.5'} mb-6">
             ${q.options.map(o => {
               const sel = q.type === 'multi' ? (answers[q.id] || []).includes(o.v) : answers[q.id] === o.v;
-              return `<button data-v="${o.v}" class="onb-opt w-full text-left p-4 rounded-2xl border-2 transition flex items-center gap-3 ${sel ? 'bg-amber-500/10 border-amber-500 shadow-md' : 'bg-white dark:bg-navy-800 border-cream-200 dark:border-navy-700 hover:border-amber-300'}">
-                ${o.icon ? `<i data-lucide="${o.icon}" class="w-5 h-5 ${sel ? 'text-amber-600' : 'text-navy-400'} shrink-0"></i>` : ''}
+              return `<button data-v="${o.v}" class="onb-opt w-full text-left p-3.5 rounded-2xl border transition flex items-center gap-3 ${sel ? 'bg-white border-sage-500 shadow-[0_8px_24px_rgba(122,158,126,0.12)]' : 'bg-white dark:bg-navy-800 border-cream-200 dark:border-navy-700 hover:border-sage-200 hover:shadow-sm'}">
+                ${o.icon ? `<span class="w-8 h-8 rounded-xl ${sel ? 'bg-sage-500 text-white' : 'bg-cream-100 dark:bg-navy-700 text-navy-400'} flex items-center justify-center shrink-0"><i data-lucide="${o.icon}" class="w-4 h-4"></i></span>` : ''}
                 <span class="flex-1 min-w-0">
-                  <span class="block text-sm font-semibold ${sel ? 'text-amber-700 dark:text-amber-400' : ''}">${o.label}</span>
-                  ${o.desc ? `<span class="block text-xs text-navy-400 mt-0.5">${o.desc}</span>` : ''}
+                  <span class="block text-[14px] font-medium ${sel ? 'text-navy-900 dark:text-white' : 'text-navy-700 dark:text-cream-200'}">${o.label}</span>
+                  ${o.desc ? `<span class="block text-[11px] text-navy-400 mt-0.5 font-light">${o.desc}</span>` : ''}
                 </span>
-                ${sel ? '<i data-lucide="check-circle-2" class="w-5 h-5 text-amber-500 shrink-0"></i>' : '<span class="w-5 h-5 rounded-full border-2 border-cream-300 dark:border-navy-600 shrink-0"></span>'}
+                ${sel ? '<span class="w-6 h-6 rounded-full bg-sage-500 flex items-center justify-center shrink-0"><i data-lucide="check" class="w-3.5 h-3.5 text-white"></i></span>' : '<span class="w-5 h-5 rounded-full border border-cream-300 dark:border-navy-600 shrink-0"></span>'}
               </button>`;
             }).join('')}
           </div>
           <div class="flex gap-3">
-            ${step > 0 ? '<button id="onbBack" class="flex-1 py-3 rounded-full bg-cream-200 dark:bg-navy-800 font-semibold hover:bg-cream-300 transition">Back</button>' : '<div class="flex-1"></div>'}
-            <button id="onbNext" ${!hasAns ? 'disabled' : ''} class="flex-[2] py-3 rounded-full font-bold transition ${hasAns ? 'bg-amber-500 text-navy-900 hover:scale-[1.02] shadow-lg btn-shine' : 'bg-cream-200 dark:bg-navy-800 text-navy-400 cursor-not-allowed'}">${step === total - 1 ? 'Enter Ottle ✨' : 'Continue →'}</button>
+            ${step > 0 ? '<button id="onbBack" class="flex-1 py-3 rounded-full bg-white border border-cream-200 dark:bg-navy-800 dark:border-navy-700 font-medium hover:bg-cream-50 transition text-sm">Back</button>' : '<div class="flex-1"></div>'}
+            <button id="onbNext" ${!hasAns ? 'disabled' : ''} class="flex-[2] py-3 rounded-full font-semibold transition text-sm ${hasAns ? 'bg-sage-600 text-white hover:bg-sage-700 shadow-md' : 'bg-cream-100 dark:bg-navy-800 text-navy-300 cursor-not-allowed border border-cream-200 dark:border-navy-700'}">${step === total - 1 ? 'Enter Ottle' : 'Continue'}</button>
           </div>
-          <p class="text-center text-xs text-navy-400 mt-4">Your choices personalize your feed • Authors keep their rights • Coins reward reading time</p>
+          <p class="text-center text-[11px] tracking-wide text-navy-400 mt-5 font-light">Personalized feed • Creator rights protected • Reading rewards coins</p>
         </div>
       </div>
     </div>`;
@@ -296,13 +338,14 @@ function renderOnboarding(root, user, profile) {
         if (q.type === 'multi') {
           const arr = answers[q.id] || [];
           answers[q.id] = arr.includes(v) ? arr.filter(x => x !== v) : [...arr, v];
+          render();
         } else {
           answers[q.id] = v;
-          // auto-advance for single after 300ms
-          setTimeout(() => { if (step < total - 1) { step++; render(); } }, 250);
-          return;
+          render();
+          if (step < total - 1) {
+            setTimeout(() => { step++; render(); }, 400);
+          }
         }
-        render();
       };
     });
     const nextBtn = root.querySelector('#onbNext');
@@ -315,13 +358,13 @@ function renderOnboarding(root, user, profile) {
         state.profile = await store.getUserProfile(user.uid);
         // Welcome coins animation
         root.innerHTML = `
-        <div class="min-h-screen bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 flex items-center justify-center p-6 text-center">
+        <div class="min-h-screen bg-gradient-to-br from-sage-500 via-sage-600 to-navy-800 flex items-center justify-center p-6 text-center">
           <div class="animate-scaleIn">
-            <div class="w-20 h-20 mx-auto rounded-3xl bg-white flex items-center justify-center text-3xl mb-4 shadow-xl">🎉</div>
-            <h2 class="text-3xl font-display font-extrabold text-white mb-2">Welcome to Ottle!</h2>
-            <p class="text-white/90 mb-1">You've got <b>100 coins</b> to unlock stories</p>
-            <p class="text-white/70 text-sm mb-6">Ch.1 free for all • Ch.2-3 free after signup • Authors paid from your reading time</p>
-            <div class="w-8 h-8 mx-auto border-4 border-white/30 border-t-white rounded-full animate-spin"></div>
+            <div class="w-20 h-20 mx-auto rounded-3xl bg-white flex items-center justify-center text-3xl mb-4 shadow-xl">✦</div>
+            <h2 class="text-3xl font-display font-bold text-white mb-2 tracking-tight">Welcome to Ottle</h2>
+            <p class="text-white/90 mb-1 font-light">You've got <b class="font-semibold">100 coins</b> to begin</p>
+            <p class="text-white/60 text-xs mb-6 font-light tracking-wide">Ch.1 free • Ch.2-3 free after signup • Premium unlocks await</p>
+            <div class="w-8 h-8 mx-auto border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
           </div>
         </div>`;
         setTimeout(() => { renderShell(); renderRoute(); }, 1200);
@@ -739,9 +782,13 @@ function renderInbox(app) {
   if (state.inboxUnsub) { state.inboxUnsub(); state.inboxUnsub = null; }
   state.inboxUnsub = store.subscribeInbox(state.user.uid, (list) => {
     const el = document.getElementById("convoList");
+    // update global badge
+    const badge = document.getElementById("inboxCount");
+    if (badge) {
+      if (list.length > 0) { badge.textContent = list.length > 9 ? "9+" : String(list.length); badge.classList.remove("hidden"); badge.classList.add("flex"); }
+      else { badge.classList.add("hidden"); badge.classList.remove("flex"); }
+    }
     if (!el) return;
-    const dot = document.getElementById("inboxDot");
-    if (dot) dot.classList.toggle("hidden", list.length === 0);
     if (!list.length) { el.innerHTML = `<p class="text-xs text-navy-400 p-3">No messages yet. Tap <b>Message</b> on any author profile.</p>`; return; }
     el.innerHTML = list.map(c => {
       const other = c.id.split("_").find(x => x !== state.user.uid);
@@ -825,9 +872,9 @@ function renderShell() {
           <div class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-xs font-bold text-amber-700 dark:text-amber-400">
             <i data-lucide="coins" class="w-3.5 h-3.5"></i> <span id="coinPill">${state.profile?.coins ?? 0}</span>
           </div>
-          <button data-route="inbox" onclick="navigate('inbox')" class="relative p-2 rounded-full hover:bg-cream-200 dark:hover:bg-navy-800 transition" title="Messages">
+          <button data-route="inbox" onclick="navigate('inbox')" class="relative p-2 rounded-full hover:bg-white dark:hover:bg-navy-800 transition border border-transparent hover:border-sage-200" title="Messages">
             <i data-lucide="mail" class="w-5 h-5"></i>
-            <span id="inboxDot" class="hidden absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-amber-500 rounded-full ring-2 ring-cream-50 dark:ring-navy-900"></span>
+            <span id="inboxCount" class="hidden absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-sage-600 text-white text-[11px] font-bold rounded-full flex items-center justify-center ring-2 ring-white dark:ring-navy-900">0</span>
           </button>
           <button onclick="toggleTheme()" class="ml-1 p-2 rounded-full hover:bg-cream-200 dark:hover:bg-navy-800 transition" title="Toggle theme">
             <i data-lucide="moon" id="tiMoon" class="w-5 h-5"></i><i data-lucide="sun" id="tiSun" class="w-5 h-5 hidden"></i>
@@ -880,6 +927,14 @@ function renderShell() {
   setActiveNav();
   attachAuthorSearch("globalSearch");
   attachAuthorSearch("globalSearchM");
+  // global inbox unread count
+  if (state._inboxBadgeUnsub) state._inboxBadgeUnsub();
+  state._inboxBadgeUnsub = store.subscribeInbox(state.user.uid, (list) => {
+    const b = document.getElementById("inboxCount");
+    if (!b) return;
+    if (list.length) { b.textContent = list.length > 9 ? "9+" : String(list.length); b.classList.remove("hidden"); b.classList.add("flex"); }
+    else { b.classList.add("hidden"); b.classList.remove("flex"); }
+  });
   $("#tiSun").classList.toggle("hidden", state.theme !== "dark");
   $("#tiMoon").classList.toggle("hidden", state.theme === "dark");
 }
@@ -1783,7 +1838,11 @@ window.openBookReader = async (bookId) => {
     <div class="flex items-center justify-between mt-6">
       <button id="rPrev" class="px-4 py-2.5 rounded-full bg-cream-200 dark:bg-navy-800 text-sm font-semibold disabled:opacity-40 hover:bg-cream-300 dark:hover:bg-navy-700 transition">← Previous</button>
       <span id="rProg" class="text-xs text-navy-400"></span>
-      <button id="rNext" class="px-4 py-2.5 rounded-full bg-amber-500 text-navy-900 text-sm font-semibold disabled:opacity-40 hover:bg-amber-600 transition">Next →</button>
+      <button id="rNext" class="px-4 py-2.5 rounded-full bg-sage-600 text-white text-sm font-semibold disabled:opacity-40 hover:bg-sage-700 transition">Next →</button>
+    </div>
+    <div class="flex gap-2 mt-4 justify-center">
+      <button onclick="downloadBookPDF('${bookId}')" class="px-4 py-2 rounded-full bg-white border border-sage-200 dark:bg-navy-800 dark:border-navy-700 text-sm font-medium hover:bg-sage-50 dark:hover:bg-navy-700 transition flex items-center gap-1.5"><i data-lucide="download" class="w-4 h-4"></i> PDF</button>
+      <button onclick="saveOffline('${bookId}')" class="px-4 py-2 rounded-full bg-white border border-sage-200 dark:bg-navy-800 dark:border-navy-700 text-sm font-medium hover:bg-sage-50 transition flex items-center gap-1.5"><i data-lucide="wifi-off" class="w-4 h-4"></i> Offline</button>
     </div>
   </div>`;
   refreshIcons();

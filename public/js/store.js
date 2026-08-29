@@ -81,7 +81,7 @@ export async function deleteStory(storyId, uid) {
 /* ---------- Marketplace books (real, added by users/admins) ---------- */
 export async function getBooks() {
   const snap = await getDocs(query(collection(db, "books"), orderBy("title")));
-  return snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(b => b.status !== "draft");
+  return snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(b => b.status !== "draft" && b.ownerId);
 }
 
 export async function addBook(book) {

@@ -133,6 +133,24 @@ export function renderAuthScreen(root) {
   phoneBtn.innerHTML = `<i data-lucide="phone" class="w-4 h-4"></i> Continue with phone`;
   phoneBtn.onclick = () => openPhoneVerify();
   root.querySelector("#authForm").parentElement.appendChild(phoneBtn);
+
+  // Show all accounts on signin page — requested
+  const acctWrap = document.createElement("div");
+  acctWrap.className = "mt-6 pt-5 border-t border-cream-200 dark:border-navy-700";
+  acctWrap.innerHTML = `<p class="text-xs font-semibold text-navy-500 dark:text-cream-300 mb-3 flex items-center gap-1.5"><i data-lucide="users" class="w-3.5 h-3.5 text-sage-500"></i> Community</p><div id="authUsers" class="flex flex-wrap gap-2"><p class="text-xs text-navy-400">Loading authors…</p></div>`;
+  root.querySelector("#authForm").parentElement.appendChild(acctWrap);
+  store.listUsers().then(users => {
+    const box = acctWrap.querySelector("#authUsers");
+    const head = acctWrap.querySelector("p");
+    if (head) head.innerHTML = `<i data-lucide="users" class="w-3.5 h-3.5 text-sage-500"></i> Community — ${users.length} authors`;
+    if (!users.length) { box.innerHTML = `<p class="text-xs text-navy-400">Be the first to join!</p>`; return; }
+    box.innerHTML = users.slice(0, 20).map(u => `
+      <div class="flex flex-col items-center gap-1 w-[52px]">
+        <img src="${u.photoURL || `https://i.pravatar.cc/100?u=${u.uid}`}" class="w-10 h-10 rounded-full object-cover ring-2 ring-white dark:ring-navy-800 shadow-sm">
+        <span class="text-[10px] leading-none truncate w-full text-center">${u.displayName ? u.displayName.split(" ")[0] : (u.username || "User")}</span>
+      </div>`).join("") + (users.length > 20 ? `<span class="text-xs text-navy-400 self-center">+${users.length - 20} more</span>` : "");
+    if (window.lucide) lucide.createIcons();
+  }).catch(() => {});
   if (window.lucide) lucide.createIcons();
 
   const tabLogin = root.querySelector("#tabLogin");
