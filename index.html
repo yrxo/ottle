@@ -12,7 +12,7 @@
   <meta name="author" content="Ottle" />
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
   <meta name="googlebot" content="index, follow" />
-  <meta name="theme-color" content="#1c2950" />
+  <meta name="theme-color" content="#ff7a3d" />
   <meta name="rating" content="general" />
   <meta name="application-name" content="Ottle" />
   <link rel="canonical" href="https://otle.2bd.net/" />
@@ -83,23 +83,26 @@
             serif: ['Georgia', 'ui-serif', 'serif']
           },
           colors: {
-            navy: { 50:'#f0f3f9',100:'#dae1f0',200:'#b9c7e2',300:'#8da3cf',400:'#5c79b5',500:'#3a5496',600:'#2d4078',700:'#243460',800:'#1c2950',900:'#15203f',950:'#0d1429' },
-            cream: { 50:'#fdfcf9',100:'#faf6ee',200:'#f3ebd9',300:'#e9d9bd',400:'#dcbf95',500:'#cf9f6b',600:'#bb7f4c',700:'#9c6240',800:'#7e4f37',900:'#684230' },
-            amber: { 400:'#fbbf55',500:'#f5a623',600:'#e08e0b' }
+            navy: { 50:'#fff2e8',100:'#ffe4cc',200:'#ffcf99',300:'#ffb066',400:'#ff8c33',500:'#e86a17',600:'#c94f0f',700:'#a33d0e',800:'#7a2e12',900:'#5a2210',950:'#3d160c' },
+            cream: { 50:'#fff8f0',100:'#ffecd2',200:'#ffd6a8',300:'#ffb88c',400:'#ff9a62',500:'#ff7a3d',600:'#ff6b35',700:'#ef4a1a',800:'#d63a12',900:'#b5300f' },
+            amber: { 400:'#ff9a62',500:'#ff7a3d',600:'#ff6b35' },
+            coral: { 400:'#ff9a62',500:'#ff7a3d',600:'#ef4a1a' }
           },
           keyframes: {
             fadeIn:{'0%':{opacity:0,transform:'translateY(8px)'},'100%':{opacity:1,transform:'translateY(0)'}},
             slideUp:{'0%':{opacity:0,transform:'translateY(20px)'},'100%':{opacity:1,transform:'translateY(0)'}},
             scaleIn:{'0%':{opacity:0,transform:'scale(0.96)'},'100%':{opacity:1,transform:'scale(1)'}},
-            pulseRing:{'0%':{boxShadow:'0 0 0 0 rgba(245,166,35,0.5)'},'70%':{boxShadow:'0 0 0 10px rgba(245,166,35,0)'},'100%':{boxShadow:'0 0 0 0 rgba(245,166,35,0)'}},
+            pulseRing:{'0%':{boxShadow:'0 0 0 0 rgba(255,122,61,0.5)'},'70%':{boxShadow:'0 0 0 10px rgba(255,122,61,0)'},'100%':{boxShadow:'0 0 0 0 rgba(255,122,61,0)'}},
             blink:{'0%,100%':{opacity:1},'50%':{opacity:0}},
             floatBlob:{'0%,100%':{transform:'translateY(0) scale(1)'},'50%':{transform:'translateY(-22px) scale(1.05)'}},
-            viewIn:{'0%':{opacity:0,transform:'translateY(14px) scale(.99)'},'100%':{opacity:1,transform:'none'}}
+            viewIn:{'0%':{opacity:0,transform:'translateY(14px) scale(.99)'},'100%':{opacity:1,transform:'none'}},
+            logoPulse:{'0%,100%':{transform:'scale(1)',filter:'drop-shadow(0 0 6px rgba(255,122,61,.35))'},'50%':{transform:'scale(1.08)',filter:'drop-shadow(0 0 14px rgba(255,122,61,.6))'}},
+            logoSpin:{'0%':{transform:'rotate(0deg) scale(1)'},'50%':{transform:'rotate(180deg) scale(1.05)'},'100%':{transform:'rotate(360deg) scale(1)'}}
           },
           animation: {
             fadeIn:'fadeIn 0.4s ease-out', slideUp:'slideUp 0.5s ease-out', scaleIn:'scaleIn 0.25s ease-out',
             pulseRing:'pulseRing 1.8s infinite', blink:'blink 1s step-end infinite', floatBlob:'floatBlob 8s ease-in-out infinite',
-            viewIn:'viewIn 0.45s cubic-bezier(.2,.7,.2,1)'
+            viewIn:'viewIn 0.45s cubic-bezier(.2,.7,.2,1)', logoPulse:'logoPulse 1.6s ease-in-out infinite', logoSpin:'logoSpin 2s linear infinite'
           }
         }
       }
@@ -108,7 +111,7 @@
   <link rel="stylesheet" href="./css/styles.css" />
   <script src="https://checkout.razorpay.com/v1/checkout.js" defer></script>
 </head>
-<body class="bg-cream-100 text-navy-900 dark:bg-navy-950 dark:text-cream-100 theme-transition min-h-screen font-sans">
+<body class="bg-cream-50 text-navy-900 dark:bg-navy-950 dark:text-cream-100 theme-transition min-h-screen font-sans">
   <div id="root"></div>
   <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] hidden"></div>
   <noscript><p style="text-align:center;padding:2rem">Ottle needs JavaScript enabled — the platform for independent storytellers to publish, read and connect.</p></noscript>

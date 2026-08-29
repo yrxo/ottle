@@ -201,7 +201,11 @@ function boot() {
     }
   });
   // loading state
-    root.innerHTML = `<div class="min-h-screen flex items-center justify-center"><div class="w-10 h-10 rounded-full border-4 border-amber-500 border-t-transparent animate-spin"></div></div>`;
+    root.innerHTML = `
+      <div class="min-h-screen flex flex-col items-center justify-center gap-4 bg-cream-50 dark:bg-navy-950">
+        <img src="./logo.png" alt="Ottle" class="w-20 h-20 object-contain animate-logoPulse">
+        <p class="text-sm font-medium tracking-widest text-navy-400 dark:text-cream-300 animate-pulse">OTTLE</p>
+      </div>`;
   });
 }
 
