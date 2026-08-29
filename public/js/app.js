@@ -28,11 +28,10 @@ const renderRichText = (t) => escapeHtml(t)
 const formatNum = (n) => n >= 1000 ? (n / 1000).toFixed(1).replace(".0", "") + "k" : (n || 0);
 const refreshIcons = () => window.lucide && lucide.createIcons();
 
-const ottleLogo = (size = "md") => `
-  <span class="ottle-logo ottle-logo-${size}">
-    <span class="ottle-mark"></span>
-    <span class="ottle-word">Ottle</span>
-  </span>`;
+const ottleLogo = (size = "md") => {
+  const h = size === "lg" ? "h-9" : size === "sm" ? "h-7" : "h-8";
+  return `<img src="./logo.png" alt="Ottle" class="${h} w-auto object-contain">`;
+};
 
 let revealObserver;
 function observeReveals() {
