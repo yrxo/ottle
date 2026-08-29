@@ -780,7 +780,7 @@ function renderInbox(app) {
   </div>`;
   refreshIcons();
   if (state.inboxUnsub) { state.inboxUnsub(); state.inboxUnsub = null; }
-  state.inboxUnsub = store.subscribeInbox(state.user.uid, (list) => {
+  state.inboxUnsub = store.subscribeInbox(state.user.uid, async (list) => {
     const el = document.getElementById("convoList");
     // update global badge
     const badge = document.getElementById("inboxCount");
@@ -790,26 +790,48 @@ function renderInbox(app) {
     }
     if (!el) return;
     if (!list.length) { el.innerHTML = `<p class="text-xs text-navy-400 p-3">No messages yet. Tap <b>Message</b> on any author profile.</p>`; return; }
-    el.innerHTML = list.map(c => {
-      const other = c.id.split("_").find(x => x !== state.user.uid);
-      return `<button onclick="openConversation('${c.id}')" class="w-full text-left p-3 rounded-xl hover:bg-cream-100 dark:hover:bg-navy-700 transition border ${activeConversation === c.id ? 'bg-cream-100 dark:bg-navy-700 border-amber-500/40' : 'border-transparent'}">
-        <p class="text-sm font-semibold truncate">${escapeHtml(c.lastMessage || "New conversation")}</p>
-        <p class="text-xs text-navy-400 truncate">${c.id.replace("_"," ↔ ")}</p>
-      </button>`;
-    }).join("");
+    // Fetch other user profiles for names/avatars
+    el.innerHTML = `<p class="text-xs text-navy-400 p-3">Loading…</p>`;
+    const enriched = await Promise.all(list.map(async c => {
+      const otherId = c.id.split("_").find(x => x !== state.user.uid);
+      let prof = null;
+      try { prof = await store.getUserProfile(otherId); } catch (e) {}
+      return { ...c, otherId, prof };
+    }));
+    el.innerHTML = enriched.map(c => `
+      <button onclick="openConversation('${c.id}')" class="w-full text-left p-3 rounded-xl hover:bg-cream-100 dark:hover:bg-navy-700 transition border flex items-center gap-3 ${activeConversation === c.id ? 'bg-cream-100 dark:bg-navy-700 border-amber-500/40' : 'border-transparent'}">
+        ${c.prof?.photoURL ? `<img src="${c.prof.photoURL}" class="w-9 h-9 rounded-full object-cover shrink-0">` : `<div class="w-9 h-9 rounded-full bg-navy-800 dark:bg-amber-500 flex items-center justify-center text-white text-xs font-bold shrink-0">${(c.prof?.displayName||"A")[0].toUpperCase()}</div>`}
+        <span class="flex-1 min-w-0">
+          <span class="block text-sm font-semibold truncate flex items-center gap-1">${escapeHtml(c.prof?.displayName || "Author")} ${tickBadge(c.prof ? store.tickOf(c.prof) : "")}</span>
+          <span class="block text-xs text-navy-400 truncate">${escapeHtml(c.lastMessage || "")}</span>
+          <span class="block text-[11px] text-navy-400/70 truncate">${escapeHtml(c.prof?.handle || "@"+(c.otherId||"").slice(0,6))} • ${c.lastAt?.seconds ? new Date(c.lastAt.seconds*1000).toLocaleDateString() : ""}</span>
+        </span>
+      </button>`).join("");
+    refreshIcons();
   });
 }
 
-window.openConversation = (cid) => {
+window.openConversation = async (cid) => {
   activeConversation = cid;
   const pane = document.getElementById("chatPane");
+  const otherId = cid.split("_").find(x => x !== state.user.uid);
+  let otherProf = null;
+  try { otherProf = await store.getUserProfile(otherId); } catch (e) {}
   pane.innerHTML = `<div class="flex flex-col h-full">
+    <div class="p-3 border-b border-cream-200 dark:border-navy-700 flex items-center gap-2 bg-cream-100/50 dark:bg-navy-900/30">
+      ${otherProf?.photoURL ? `<img src="${otherProf.photoURL}" class="w-8 h-8 rounded-full object-cover">` : `<div class="w-8 h-8 rounded-full bg-navy-800 dark:bg-amber-500 flex items-center justify-center text-white text-xs font-bold">${(otherProf?.displayName||"A")[0].toUpperCase()}</div>`}
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-semibold flex items-center gap-1">${escapeHtml(otherProf?.displayName || "Author")} ${tickBadge(otherProf ? store.tickOf(otherProf) : "")}</p>
+        <p class="text-xs text-navy-400 truncate">${escapeHtml(otherProf?.handle || "@"+otherId.slice(0,6))}</p>
+      </div>
+    </div>
     <div id="msgList" class="flex-1 overflow-auto p-4 space-y-2"><p class="text-xs text-navy-400">Loading messages…</p></div>
     <div class="p-3 border-t border-cream-200 dark:border-navy-700 flex gap-2">
       <input id="msgInput" type="text" placeholder="Type a message…" class="flex-1 px-3 py-2.5 rounded-xl bg-cream-200/60 dark:bg-navy-900/40 border border-transparent focus:border-amber-500 outline-none text-sm">
       <button id="msgSend" class="px-4 py-2 rounded-xl bg-amber-500 text-navy-900 font-semibold hover:scale-105 transition">Send</button>
     </div>
   </div>`;
+  refreshIcons();
   if (state.msgUnsub) state.msgUnsub();
   state.msgUnsub = store.subscribeMessages(cid, (msgs) => {
     const list = document.getElementById("msgList");
