@@ -395,7 +395,7 @@ export async function sendMessage(fromUid, toUid, text, fromName, fromHandle) {
   const snap = await getDoc(convoRef);
   if (!snap.exists()) {
     await setDoc(convoRef, {
-      participants: [fromUid, toUid],
+      participants: [fromUid, toUid].sort(),
       lastMessage: text.slice(0, 80),
       lastAt: serverTimestamp(),
       createdAt: serverTimestamp()
@@ -410,8 +410,20 @@ export async function sendMessage(fromUid, toUid, text, fromName, fromHandle) {
 }
 
 export function subscribeInbox(uid, cb) {
-  const q = query(collection(db, "conversations"), where("participants", "array-contains", uid), orderBy("lastAt", "desc"));
-  return onSnapshot(q, (snap) => cb(snap.docs.map(d => ({ id: d.id, ...d.data() }))), (e) => cb([]));
+  // avoid composite index requirement: query without orderBy, sort client-side
+  const q = query(collection(db, "conversations"), where("participants", "array-contains", uid));
+  return onSnapshot(q, (snap) => {
+    const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    list.sort((a,b) => {
+      const at = a.lastAt?.seconds ? a.lastAt.seconds*1000 : (a.lastAt || 0);
+      const bt = b.lastAt?.seconds ? b.lastAt.seconds*1000 : (b.lastAt || 0);
+      return bt - at;
+    });
+    cb(list);
+  }, (e) => {
+    console.warn("inbox subscribe error", e.code, e.message);
+    cb([]);
+  });
 }
 
 export function subscribeMessages(cid, cb) {
