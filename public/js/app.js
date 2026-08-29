@@ -20,7 +20,7 @@ const state = {
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const elFrom = (html) => { const t = document.createElement("template"); t.innerHTML = html.trim(); return t.content.firstChild; };
-const escapeHtml = (s) => s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const escapeHtml = (s) => String(s || "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const renderRichText = (t) => escapeHtml(t)
   .replace(/@(\w+)/g, '<span class="mention">@$1</span>')
   .replace(/#(\w+)/g, '<span class="hashtag">#$1</span>')
@@ -285,7 +285,7 @@ async function renderLanding(root) {
             ${heroBook ? `
               <div class="aspect-[3/4] rounded-xl bg-cover bg-center mb-3" style="background-image:url('https://picsum.photos/seed/${heroBook.cover}/300/400')"></div>
               <p class="font-bold">${escapeHtml(heroBook.title)}</p>
-              <p class="text-xs text-navy-400">by ${escapeHtml(heroBook.author)}</p>
+              <p class="text-xs text-navy-400">by ${escapeHtml(heroBook.ownerName || heroBook.author)}</p>
             ` : `
               <div class="aspect-[3/4] rounded-xl bg-gradient-to-br from-navy-700 to-navy-900 flex items-center justify-center text-center p-3">
                 <p class="text-cream-100/80 text-sm leading-snug">Your book,<br>published here.</p>
@@ -344,7 +344,7 @@ async function renderLanding(root) {
         ${featured.map(b=>`
           <div class="group bg-cream-50 dark:bg-navy-800 rounded-2xl overflow-hidden border border-cream-300/50 dark:border-navy-700 card-hover reveal">
             <div class="aspect-[3/4] bg-cover bg-center group-hover:scale-105 transition duration-500" style="background-image:url('https://picsum.photos/seed/${b.cover}/300/400')"></div>
-            <div class="p-4"><h3 class="font-bold leading-snug group-hover:text-amber-600 dark:group-hover:text-amber-400 transition">${escapeHtml(b.title)}</h3><p class="text-xs text-navy-400">${escapeHtml(b.author)}</p></div>
+            <div class="p-4"><h3 class="font-bold leading-snug group-hover:text-amber-600 dark:group-hover:text-amber-400 transition">${escapeHtml(b.title)}</h3><p class="text-xs text-navy-400">${escapeHtml(b.ownerName || b.author)}</p></div>
           </div>`).join("")}
       </div>` : `<p class="text-center text-navy-400 py-10">No books published yet — be the first author on Ottle!</p>`}
     </section>
