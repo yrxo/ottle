@@ -30,6 +30,18 @@ service cloud.firestore {
       match /shelf/{bookId} {
         allow read, write: if isMine(uid);
       }
+
+      match /unlockedChapters/{id} {
+        allow read, write: if isMine(uid);
+      }
+    }
+
+    match /conversations/{cid} {
+      allow create, read, update: if signedIn();
+    }
+
+    match /conversations/{cid}/messages/{mid} {
+      allow read, create: if signedIn();
     }
 
     // Serverless OTP store: sirf HASH save hota hai (plaintext code kabhi DB me nahi),
@@ -44,8 +56,17 @@ service cloud.firestore {
     match /posts/{id} {
       allow read: if true;
       allow create: if signedIn() && request.resource.data.uid == request.auth.uid;
-      allow update: if resource.data.uid == request.auth.uid;
+      // allow likes/comments/shares by anyone signed in, content edit only by owner
+      allow update: if isAdmin()
+        || resource.data.uid == request.auth.uid
+        || (signedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes','likedBy','comments','shares']));
       allow delete: if resource.data.uid == request.auth.uid || isAdmin();
+    }
+
+    match /stories/{storyId} {
+      allow read: if true;
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid;
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid || isAdmin();
     }
 
     match /books/{bookId} {

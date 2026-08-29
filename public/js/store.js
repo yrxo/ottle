@@ -46,6 +46,36 @@ export async function deletePostAsAdmin(postId) {
   await deleteDoc(doc(db, "posts", postId));
 }
 
+/* ---------- Stories (Insta-style 24h) ---------- */
+export function subscribeStories(cb) {
+  const q = query(collection(db, "stories"), orderBy("createdAt", "desc"));
+  return onSnapshot(q, (snap) => {
+    const now = Date.now();
+    const list = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      .filter(s => !s.expiresAt || (s.expiresAt.seconds ? s.expiresAt.seconds * 1000 : s.expiresAt) > now);
+    cb(list);
+  });
+}
+
+export async function addStory({ uid, author, handle, avatar, tick, image }) {
+  await addDoc(collection(db, "stories"), {
+    uid, author, handle, avatar, tick: tick || null, image,
+    createdAt: serverTimestamp(),
+    expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
+  });
+}
+
+export async function deleteStory(storyId, uid) {
+  const ref = doc(db, "stories", storyId);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) throw new Error("Story not found");
+  if (snap.data().uid !== uid && !ADMIN_EMAILS.includes(snap.data().email || "")) {
+    // allow owner or admin (check via caller profile in UI, but double check here via uid only)
+    if (snap.data().uid !== uid) throw new Error("Not allowed");
+  }
+  await deleteDoc(ref);
+}
+
 /* ---------- Marketplace books (real, added by users/admins) ---------- */
 export async function getBooks() {
   const snap = await getDocs(query(collection(db, "books"), orderBy("title")));
@@ -81,6 +111,10 @@ export async function ensureProfile(uid, { displayName, email, photoURL }) {
       emailVerified: false,
       library: [], published: [], earnings: [],
       following: [], followers: [], bio: "",
+      onboardingCompleted: false,
+      onboarding: null,
+      coins: 100,
+      totalReadingSeconds: 0,
       createdAt: serverTimestamp()
     });
   } else if (isAdmin) {
@@ -259,6 +293,108 @@ export async function getShelf(uid) {
 export async function saveReadingProgress(uid, bookId, lastChapter, lastScroll) {
   await setDoc(doc(db, "users", uid, "shelf", bookId),
     { lastChapter, lastScroll }, { merge: true });
+}
+
+export async function saveOnboarding(uid, data) {
+  await updateDoc(doc(db, "users", uid), {
+    onboarding: data,
+    onboardingCompleted: true,
+    coins: increment(0)
+  });
+  // ensure coins field exists for old users
+  const snap = await getDoc(doc(db, "users", uid));
+  if (snap.exists() && snap.data().coins == null) {
+    await updateDoc(doc(db, "users", uid), { coins: 100 });
+  }
+}
+
+export async function getUserCoins(uid) {
+  const snap = await getDoc(doc(db, "users", uid));
+  return snap.exists() ? (snap.data().coins ?? 0) : 0;
+}
+
+export async function spendCoins(uid, amount) {
+  const ref = doc(db, "users", uid);
+  const snap = await getDoc(ref);
+  const coins = snap.data()?.coins ?? 0;
+  if (coins < amount) throw new Error("Not enough coins");
+  await updateDoc(ref, { coins: increment(-amount) });
+  return coins - amount;
+}
+
+export async function addCoins(uid, amount) {
+  await updateDoc(doc(db, "users", uid), { coins: increment(amount) });
+}
+
+export async function trackReadingTime(uid, seconds, authorId) {
+  if (!seconds || seconds < 5) return;
+  await updateDoc(doc(db, "users", uid), { totalReadingSeconds: increment(seconds) }).catch(() => {});
+  if (authorId && authorId !== uid) {
+    await updateDoc(doc(db, "users", authorId), { totalReadingSeconds: increment(0), earnings: increment(0) }).catch(() => {});
+  }
+}
+
+export async function isChapterUnlocked(uid, bookId, chapterIndex, profile) {
+  if (chapterIndex === 0) return true; // Ch1 always free
+  if (!uid) return false; // Ch2+ need login
+  if (chapterIndex <= 2) return true; // Ch2-3 free after signup (DraftSoul model)
+  // Check if already unlocked
+  const ref = doc(db, "users", uid, "unlockedChapters", `${bookId}_${chapterIndex}`);
+  const snap = await getDoc(ref);
+  if (snap.exists()) return true;
+  // Gold/blue/admin unlimited
+  if (profile?.goldTick || profile?.blueTick || profile?.role === "admin") return true;
+  return false;
+}
+
+export async function unlockChapter(uid, bookId, chapterIndex) {
+  await setDoc(doc(db, "users", uid, "unlockedChapters", `${bookId}_${chapterIndex}`), {
+    unlockedAt: serverTimestamp(), bookId, chapterIndex
+  });
+}
+
+/* ---------- Messaging to authors ---------- */
+export function conversationId(a, b) {
+  return [a, b].sort().join("_");
+}
+
+export async function sendMessage(fromUid, toUid, text, fromName, fromHandle) {
+  const cid = conversationId(fromUid, toUid);
+  const convoRef = doc(db, "conversations", cid);
+  const snap = await getDoc(convoRef);
+  if (!snap.exists()) {
+    await setDoc(convoRef, {
+      participants: [fromUid, toUid],
+      lastMessage: text.slice(0, 80),
+      lastAt: serverTimestamp(),
+      createdAt: serverTimestamp()
+    });
+  } else {
+    await updateDoc(convoRef, { lastMessage: text.slice(0, 80), lastAt: serverTimestamp() });
+  }
+  await addDoc(collection(db, "conversations", cid, "messages"), {
+    from: fromUid, to: toUid, text, fromName: fromName || "", fromHandle: fromHandle || "",
+    createdAt: serverTimestamp()
+  });
+}
+
+export function subscribeInbox(uid, cb) {
+  const q = query(collection(db, "conversations"), where("participants", "array-contains", uid), orderBy("lastAt", "desc"));
+  return onSnapshot(q, (snap) => cb(snap.docs.map(d => ({ id: d.id, ...d.data() }))), (e) => cb([]));
+}
+
+export function subscribeMessages(cid, cb) {
+  const q = query(collection(db, "conversations", cid, "messages"), orderBy("createdAt", "asc"));
+  return onSnapshot(q, (snap) => cb(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+}
+
+export async function getConversationOtherUser(cid, myUid) {
+  const snap = await getDoc(doc(db, "conversations", cid));
+  if (!snap.exists()) return null;
+  const parts = snap.data().participants || [];
+  const otherId = parts.find(p => p !== myUid);
+  if (!otherId) return null;
+  return getUserProfile(otherId);
 }
 
 /* ---------- AI Studio drafts ---------- */

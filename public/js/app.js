@@ -170,6 +170,169 @@ function ottleConfirm(message, { okText = "Confirm", danger = false } = {}) {
   });
 }
 
+/* ---------- Onboarding (5-6 questions before entry) ---------- */
+const ONBOARDING_QUESTIONS = [
+  {
+    id: "whyHere",
+    q: "Why are you here on Ottle?",
+    sub: "Tell us what brings you to our storytelling world",
+    type: "single",
+    options: [
+      { v: "read", label: "To read amazing stories", icon: "book-open", desc: "Dive into Hindi & Hinglish web novels" },
+      { v: "write", label: "To write my own stories", icon: "pen-line", desc: "Share your imagination with the world" },
+      { v: "both", label: "Both — read & write", icon: "sparkles", desc: "The full Ottle experience" }
+    ]
+  },
+  {
+    id: "genres",
+    q: "What genres make your heart beat?",
+    sub: "Pick as many as you love — we'll curate for you",
+    type: "multi",
+    options: [
+      { v: "romance", label: "Romance" }, { v: "thriller", label: "Thriller" },
+      { v: "fantasy", label: "Fantasy" }, { v: "horror", label: "Horror" },
+      { v: "mystery", label: "Mystery" }, { v: "adventure", label: "Adventure" },
+      { v: "drama", label: "Drama" }, { v: "poetry", label: "Poetry" },
+      { v: "sci-fi", label: "Sci-Fi" }, { v: "young-adult", label: "Young Adult" }
+    ]
+  },
+  {
+    id: "language",
+    q: "Which language feels like home?",
+    sub: "DraftSoul style — Hindi, Hinglish or English?",
+    type: "single",
+    options: [
+      { v: "hindi", label: "हिन्दी", desc: "Hindi" },
+      { v: "hinglish", label: "Hinglish", desc: "Hindi + English mix" },
+      { v: "english", label: "English", desc: "English" }
+    ]
+  },
+  {
+    id: "readingTime",
+    q: "How much time do you give to stories daily?",
+    sub: "We'll pay authors from your reading time — just like DraftSoul",
+    type: "single",
+    options: [
+      { v: "lt30", label: "< 30 minutes", desc: "Quick escapes" },
+      { v: "30-60", label: "30 min – 1 hour", desc: "Daily ritual" },
+      { v: "1-2hr", label: "1 – 2 hours", desc: "Serious reader" },
+      { v: "2hr+", label: "2+ hours", desc: "Can't put it down!" }
+    ]
+  },
+  {
+    id: "writerStatus",
+    q: "Are you a writer already?",
+    sub: "Your words deserve an audience",
+    type: "single",
+    options: [
+      { v: "published", label: "Yes, I'm published", desc: "Seasoned storyteller" },
+      { v: "hobby", label: "Hobby writer", desc: "I write for joy" },
+      { v: "aspiring", label: "Want to start", desc: "Dreaming to publish my first" }
+    ]
+  },
+  {
+    id: "excitement",
+    q: "What kind of stories excite you most?",
+    sub: "Last one — help us find your perfect reads",
+    type: "single",
+    options: [
+      { v: "love", label: "Love stories", icon: "heart" },
+      { v: "mystery", label: "Mystery & suspense", icon: "search" },
+      { v: "fantasy", label: "Fantasy worlds", icon: "wand-2" },
+      { v: "emotional", label: "Emotional drama", icon: "smile" }
+    ]
+  }
+];
+
+function renderOnboarding(root, user, profile) {
+  let step = 0;
+  const answers = {};
+  const total = ONBOARDING_QUESTIONS.length;
+
+  const render = () => {
+    const q = ONBOARDING_QUESTIONS[step];
+    const progress = ((step / total) * 100).toFixed(0);
+    const hasAns = q.type === "multi" ? (answers[q.id]?.length > 0) : !!answers[q.id];
+
+    root.innerHTML = `
+    <div class="min-h-screen bg-gradient-to-br from-cream-50 via-white to-cream-100 dark:from-navy-950 dark:via-navy-900 dark:to-navy-950 flex flex-col">
+      <div class="h-1.5 bg-cream-200 dark:bg-navy-800">
+        <div class="h-full bg-gradient-to-r from-amber-400 to-amber-500 transition-all duration-500" style="width:${progress}%"></div>
+      </div>
+      <div class="flex-1 flex items-center justify-center p-4 sm:p-6">
+        <div class="w-full max-w-xl animate-scaleIn">
+          <div class="text-center mb-6">
+            <img src="./logo.png" alt="Ottle" class="w-12 h-12 mx-auto mb-3 object-contain">
+            <p class="text-xs tracking-[0.2em] text-amber-600 dark:text-amber-400 font-semibold">STEP ${step + 1} OF ${total}</p>
+            <h2 class="text-2xl sm:text-3xl font-display font-extrabold mt-2 leading-tight">${q.q}</h2>
+            <p class="text-sm text-navy-500 dark:text-cream-300/70 mt-2">${q.sub}</p>
+          </div>
+          <div class="${q.type === 'multi' ? 'grid grid-cols-2 gap-3' : 'space-y-3'} mb-6">
+            ${q.options.map(o => {
+              const sel = q.type === 'multi' ? (answers[q.id] || []).includes(o.v) : answers[q.id] === o.v;
+              return `<button data-v="${o.v}" class="onb-opt w-full text-left p-4 rounded-2xl border-2 transition flex items-center gap-3 ${sel ? 'bg-amber-500/10 border-amber-500 shadow-md' : 'bg-white dark:bg-navy-800 border-cream-200 dark:border-navy-700 hover:border-amber-300'}">
+                ${o.icon ? `<i data-lucide="${o.icon}" class="w-5 h-5 ${sel ? 'text-amber-600' : 'text-navy-400'} shrink-0"></i>` : ''}
+                <span class="flex-1 min-w-0">
+                  <span class="block text-sm font-semibold ${sel ? 'text-amber-700 dark:text-amber-400' : ''}">${o.label}</span>
+                  ${o.desc ? `<span class="block text-xs text-navy-400 mt-0.5">${o.desc}</span>` : ''}
+                </span>
+                ${sel ? '<i data-lucide="check-circle-2" class="w-5 h-5 text-amber-500 shrink-0"></i>' : '<span class="w-5 h-5 rounded-full border-2 border-cream-300 dark:border-navy-600 shrink-0"></span>'}
+              </button>`;
+            }).join('')}
+          </div>
+          <div class="flex gap-3">
+            ${step > 0 ? '<button id="onbBack" class="flex-1 py-3 rounded-full bg-cream-200 dark:bg-navy-800 font-semibold hover:bg-cream-300 transition">Back</button>' : '<div class="flex-1"></div>'}
+            <button id="onbNext" ${!hasAns ? 'disabled' : ''} class="flex-[2] py-3 rounded-full font-bold transition ${hasAns ? 'bg-amber-500 text-navy-900 hover:scale-[1.02] shadow-lg btn-shine' : 'bg-cream-200 dark:bg-navy-800 text-navy-400 cursor-not-allowed'}">${step === total - 1 ? 'Enter Ottle ✨' : 'Continue →'}</button>
+          </div>
+          <p class="text-center text-xs text-navy-400 mt-4">Your choices personalize your feed • Authors keep their rights • Coins reward reading time</p>
+        </div>
+      </div>
+    </div>`;
+    refreshIcons();
+
+    root.querySelectorAll('.onb-opt').forEach(btn => {
+      btn.onclick = () => {
+        const v = btn.dataset.v;
+        if (q.type === 'multi') {
+          const arr = answers[q.id] || [];
+          answers[q.id] = arr.includes(v) ? arr.filter(x => x !== v) : [...arr, v];
+        } else {
+          answers[q.id] = v;
+          // auto-advance for single after 300ms
+          setTimeout(() => { if (step < total - 1) { step++; render(); } }, 250);
+          return;
+        }
+        render();
+      };
+    });
+    const nextBtn = root.querySelector('#onbNext');
+    if (nextBtn) nextBtn.onclick = async () => {
+      if (!hasAns) return;
+      if (step < total - 1) { step++; render(); return; }
+      nextBtn.disabled = true; nextBtn.textContent = 'Setting up your world…';
+      try {
+        await store.saveOnboarding(user.uid, { ...answers, completedAt: Date.now() });
+        state.profile = await store.getUserProfile(user.uid);
+        // Welcome coins animation
+        root.innerHTML = `
+        <div class="min-h-screen bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 flex items-center justify-center p-6 text-center">
+          <div class="animate-scaleIn">
+            <div class="w-20 h-20 mx-auto rounded-3xl bg-white flex items-center justify-center text-3xl mb-4 shadow-xl">🎉</div>
+            <h2 class="text-3xl font-display font-extrabold text-white mb-2">Welcome to Ottle!</h2>
+            <p class="text-white/90 mb-1">You've got <b>100 coins</b> to unlock stories</p>
+            <p class="text-white/70 text-sm mb-6">Ch.1 free for all • Ch.2-3 free after signup • Authors paid from your reading time</p>
+            <div class="w-8 h-8 mx-auto border-4 border-white/30 border-t-white rounded-full animate-spin"></div>
+          </div>
+        </div>`;
+        setTimeout(() => { renderShell(); renderRoute(); }, 1200);
+      } catch (e) { nextBtn.disabled = false; nextBtn.textContent = 'Try again'; toast(e.message || 'Could not save'); }
+    };
+    const backBtn = root.querySelector('#onbBack');
+    if (backBtn) backBtn.onclick = () => { step--; render(); };
+  };
+  render();
+}
+
 /* ---------------- Auth boot ---------------- */
 function boot() {
   applyTheme();
@@ -195,6 +358,15 @@ function boot() {
       if (!u.photoURL && state.profile?.photoURL) {
         u.photoURL = state.profile.photoURL;
         updateAuthPhoto(state.profile.photoURL).catch(() => {});
+      }
+      // DraftSoul onboarding gate — 5-6 questions before entry
+      if (!state.profile.onboardingCompleted && !state.profile?.onboarding) {
+        // Check legacy field
+        const needsOnboarding = !state.profile.onboardingCompleted;
+        if (needsOnboarding) {
+          renderOnboarding(root, u, state.profile);
+          return;
+        }
       }
       renderShell();
       renderRoute();
@@ -374,7 +546,221 @@ async function renderLanding(root) {
 
 function cleanup() {
   if (state.postsUnsub) { state.postsUnsub(); state.postsUnsub = null; }
+  if (state.inboxUnsub) { state.inboxUnsub(); state.inboxUnsub = null; }
+  if (state.msgUnsub) { state.msgUnsub(); state.msgUnsub = null; }
+  if (state._storiesUnsub) { state._storiesUnsub(); state._storiesUnsub = null; }
 }
+
+/* ---------------- STORIES PAGE (Insta-like feed + stories strip) ---------------- */
+let _storiesList = [];
+let _storyViewIdx = 0;
+let _storyUserIds = [];
+
+function renderStoriesFeed(app) {
+  app.innerHTML = `
+  <div class="max-w-[680px] mx-auto px-0 sm:px-4 py-4 sm:py-6 animate-fadeIn">
+    <div class="bg-cream-50 dark:bg-navy-800 border-y sm:border sm:rounded-2xl border-cream-200 dark:border-navy-700 p-3 mb-4">
+      <div id="storyStrip" class="flex gap-4 overflow-x-auto scrollbar-none pb-1" style="scrollbar-width:none">
+        <button onclick="openAddStory()" class="flex flex-col items-center gap-1.5 shrink-0">
+          <div class="w-[66px] h-[66px] rounded-full bg-cream-200 dark:bg-navy-700 flex items-center justify-center border-2 border-dashed border-cream-300 dark:border-navy-600">
+            <i data-lucide="plus" class="w-6 h-6 text-navy-400"></i>
+          </div>
+          <span class="text-xs">Your story</span>
+        </button>
+        <div id="storyAvatars" class="flex gap-4 shrink-0"><p class="text-xs text-navy-400 py-6">Loading stories…</p></div>
+      </div>
+    </div>
+    <div id="storiesFeed" class="space-y-4">${skeletonPosts(2)}</div>
+  </div>`;
+  refreshIcons();
+
+  // stories strip live
+  if (state._storiesUnsub) { state._storiesUnsub(); state._storiesUnsub = null; }
+  state._storiesUnsub = store.subscribeStories((list) => {
+    _storiesList = list;
+    // group by user, keep latest per user
+    const byUser = {};
+    list.forEach(s => { if (!byUser[s.uid]) byUser[s.uid] = []; byUser[s.uid].push(s); });
+    _storyUserIds = Object.keys(byUser);
+    const av = document.getElementById("storyAvatars");
+    if (!av) return;
+    if (!_storyUserIds.length) { av.innerHTML = `<p class="text-xs text-navy-400 py-6">No stories yet — tap + to add one</p>`; return; }
+    av.innerHTML = _storyUserIds.map(uid => {
+      const s = byUser[uid][0];
+      const ring = "p-[2px] bg-gradient-to-tr from-amber-400 via-pink-500 to-amber-500";
+      return `<button onclick="openStoryViewer('${uid}')" class="flex flex-col items-center gap-1 shrink-0">
+        <span class="w-[66px] h-[66px] rounded-full ${ring}"><img src="${s.avatar || `https://i.pravatar.cc/100?u=${uid}`}" class="w-full h-full rounded-full border-[3px] border-cream-50 dark:border-navy-800 object-cover"></span>
+        <span class="text-xs truncate w-[74px] text-center">${escapeHtml(s.author?.split(' ')[0] || 'Author')}</span>
+      </button>`;
+    }).join("");
+  });
+
+  // reuse posts feed for main insta feed
+  const feedEl = document.getElementById("storiesFeed");
+  if (state.postsUnsub) { state.postsUnsub(); state.postsUnsub = null; }
+  state.postsUnsub = store.subscribePosts((posts) => {
+    state.posts = posts;
+    if (!feedEl) return;
+    if (!posts.length) { feedEl.innerHTML = `<p class="text-center text-navy-400 py-10 bg-cream-50 dark:bg-navy-800 rounded-2xl border border-cream-200 dark:border-navy-700">No posts yet — follow authors to see feed</p>`; return; }
+    feedEl.innerHTML = posts.map((p,i) => postCard(p,i)).join("");
+    refreshIcons();
+  });
+}
+
+window.openAddStory = () => {
+  const back = elFrom(`<div class="fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4 animate-fadeIn" onclick="if(event.target===this)this.remove()"></div>`);
+  back.innerHTML = `<div class="bg-cream-50 dark:bg-navy-800 rounded-2xl w-full max-w-sm p-6 animate-scaleIn">
+    <h3 class="font-bold text-lg mb-1">Add to story</h3>
+    <p class="text-xs text-navy-400 mb-4">Visible for 24 hours — like Instagram</p>
+    <input id="storyFile" type="file" accept="image/*" class="hidden">
+    <button id="pickStory" class="w-full py-3 rounded-xl border-2 border-dashed border-cream-300 dark:border-navy-600 text-sm font-medium hover:border-amber-500 transition flex items-center justify-center gap-2"><i data-lucide="image" class="w-4 h-4"></i> Choose image</button>
+    <img id="storyPrev" class="hidden w-full h-64 object-cover rounded-xl mt-3">
+    <p id="storyErr" class="text-xs text-red-500 mt-2 hidden"></p>
+    <button id="postStory" disabled class="w-full mt-4 py-2.5 rounded-xl bg-amber-500 text-navy-900 font-semibold disabled:opacity-40 transition">Share to story</button>
+  </div>`;
+  document.body.appendChild(back); refreshIcons();
+  let dataUrl = null;
+  const pick = back.querySelector("#pickStory"), file = back.querySelector("#storyFile"), prev = back.querySelector("#storyPrev"), btn = back.querySelector("#postStory"), err = back.querySelector("#storyErr");
+  pick.onclick = () => file.click();
+  file.onchange = async () => {
+    const f = file.files[0]; if(!f) return;
+    try { dataUrl = await fileToDataUrl(f, 1080, 0.85); prev.src = dataUrl; prev.classList.remove("hidden"); btn.disabled = false; } catch(e){ err.textContent="Could not read image"; err.classList.remove("hidden"); }
+  };
+  btn.onclick = async () => {
+    if (!dataUrl) return;
+    btn.disabled = true; btn.textContent = "Sharing…";
+    try {
+      const p = state.profile;
+      await store.addStory({ uid: state.user.uid, author: p?.displayName || state.user.email, handle: p?.handle || "", avatar: p?.photoURL || state.user.photoURL || "", tick: store.tickOf(p), image: dataUrl });
+      toast("Story shared ✨"); back.remove();
+    } catch(e){ err.textContent = e.message || "Failed"; err.classList.remove("hidden"); btn.disabled=false; btn.textContent="Share to story"; }
+  };
+};
+
+window.openStoryViewer = (uid) => {
+  const userStories = _storiesList.filter(s => s.uid === uid);
+  if (!userStories.length) return;
+  let idx = 0;
+  const back = elFrom(`<div class="fixed inset-0 z-[70] bg-black flex flex-col animate-fadeIn"></div>`);
+  back.innerHTML = `
+    <div class="flex items-center justify-between p-3 text-white">
+      <div class="flex items-center gap-2">
+        <img src="${userStories[0].avatar || `https://i.pravatar.cc/100?u=${uid}`}" class="w-8 h-8 rounded-full">
+        <span class="text-sm font-semibold">${escapeHtml(userStories[0].author)}</span>
+        <span class="text-xs opacity-60">${escapeHtml(userStories[0].handle || "")}</span>
+      </div>
+      <button id="closeStory" class="p-2"><i data-lucide="x" class="w-5 h-5"></i></button>
+    </div>
+    <div class="flex-1 flex items-center justify-center p-4 relative">
+      <button id="prevS" class="absolute left-2 p-2 rounded-full bg-white/20 text-white"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
+      <img id="storyImg" src="${userStories[0].image}" class="max-h-[78vh] max-w-full rounded-2xl object-contain">
+      <button id="nextS" class="absolute right-2 p-2 rounded-full bg-white/20 text-white"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
+      <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5" id="dots"></div>
+    </div>
+    <div class="p-3 flex items-center gap-2">
+      <input id="replyInput" placeholder="Reply…" class="flex-1 px-3 py-2 rounded-full bg-white/10 text-white placeholder:text-white/60 outline-none text-sm">
+      <button id="sendReply" class="px-4 py-2 rounded-full bg-white text-black text-sm font-semibold">Send</button>
+    </div>`;
+  document.body.appendChild(back); refreshIcons();
+  const img = back.querySelector("#storyImg"), dots = back.querySelector("#dots");
+  let timer = null;
+  const render = () => {
+    img.src = userStories[idx].image;
+    dots.innerHTML = userStories.map((_,i) => `<span class="h-1 rounded-full transition-all ${i===idx ? 'w-6 bg-white' : 'w-6 bg-white/30'}"></span>`).join("");
+    clearTimeout(timer); timer = setTimeout(() => { if (idx < userStories.length -1) { idx++; render(); } else back.remove(); }, 5000);
+  };
+  back.querySelector("#closeStory").onclick = () => { clearTimeout(timer); back.remove(); };
+  back.querySelector("#prevS").onclick = () => { idx = Math.max(0, idx-1); render(); };
+  back.querySelector("#nextS").onclick = () => { idx = Math.min(userStories.length-1, idx+1); render(); };
+  back.querySelector("#sendReply").onclick = async () => {
+    const t = back.querySelector("#replyInput").value.trim(); if(!t) return;
+    await store.sendMessage(state.user.uid, uid, t, state.profile?.displayName || "", state.profile?.handle || "");
+    toast("Reply sent"); back.querySelector("#replyInput").value="";
+  };
+  back.onclick = (e) => { if (e.target === back) { clearTimeout(timer); back.remove(); } };
+  render();
+};
+
+/* ---------- Inbox / Messaging to authors ---------- */
+let activeConversation = null;
+function renderInbox(app) {
+  app.innerHTML = `
+  <div class="max-w-5xl mx-auto px-4 sm:px-6 py-6 animate-fadeIn">
+    <div class="flex items-center gap-3 mb-6">
+      <h1 class="text-2xl font-display font-extrabold flex items-center gap-2"><i data-lucide="mail" class="w-6 h-6 text-amber-500"></i> Messages</h1>
+      <span class="text-xs px-2.5 py-1 rounded-full bg-cream-200 dark:bg-navy-800 text-navy-500">DM authors — like DraftSoul private messages</span>
+    </div>
+    <div class="grid md:grid-cols-[340px_1fr] gap-4 h-[66vh] md:h-[70vh]">
+      <div class="bg-cream-50 dark:bg-navy-800 rounded-2xl border border-cream-300/50 dark:border-navy-700 flex flex-col overflow-hidden">
+        <div class="p-3 border-b border-cream-200 dark:border-navy-700">
+          <p class="text-xs font-semibold text-navy-500 dark:text-cream-300">Conversations</p>
+        </div>
+        <div id="convoList" class="flex-1 overflow-auto p-2 space-y-1"><p class="text-xs text-navy-400 p-3">Loading…</p></div>
+      </div>
+      <div id="chatPane" class="bg-cream-50 dark:bg-navy-800 rounded-2xl border border-cream-300/50 dark:border-navy-700 flex flex-col overflow-hidden">
+        <div class="flex-1 flex items-center justify-center text-center p-8 text-navy-400">
+          <div><i data-lucide="message-circle" class="w-10 h-10 mx-auto mb-3 opacity-40"></i><p class="font-medium">Select a conversation</p><p class="text-xs mt-1">Or message any author from their profile → Message button</p></div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+  refreshIcons();
+  if (state.inboxUnsub) { state.inboxUnsub(); state.inboxUnsub = null; }
+  state.inboxUnsub = store.subscribeInbox(state.user.uid, (list) => {
+    const el = document.getElementById("convoList");
+    if (!el) return;
+    const dot = document.getElementById("inboxDot");
+    if (dot) dot.classList.toggle("hidden", list.length === 0);
+    if (!list.length) { el.innerHTML = `<p class="text-xs text-navy-400 p-3">No messages yet. Tap <b>Message</b> on any author profile.</p>`; return; }
+    el.innerHTML = list.map(c => {
+      const other = c.id.split("_").find(x => x !== state.user.uid);
+      return `<button onclick="openConversation('${c.id}')" class="w-full text-left p-3 rounded-xl hover:bg-cream-100 dark:hover:bg-navy-700 transition border ${activeConversation === c.id ? 'bg-cream-100 dark:bg-navy-700 border-amber-500/40' : 'border-transparent'}">
+        <p class="text-sm font-semibold truncate">${escapeHtml(c.lastMessage || "New conversation")}</p>
+        <p class="text-xs text-navy-400 truncate">${c.id.replace("_"," ↔ ")}</p>
+      </button>`;
+    }).join("");
+  });
+}
+
+window.openConversation = (cid) => {
+  activeConversation = cid;
+  const pane = document.getElementById("chatPane");
+  pane.innerHTML = `<div class="flex flex-col h-full">
+    <div id="msgList" class="flex-1 overflow-auto p-4 space-y-2"><p class="text-xs text-navy-400">Loading messages…</p></div>
+    <div class="p-3 border-t border-cream-200 dark:border-navy-700 flex gap-2">
+      <input id="msgInput" type="text" placeholder="Type a message…" class="flex-1 px-3 py-2.5 rounded-xl bg-cream-200/60 dark:bg-navy-900/40 border border-transparent focus:border-amber-500 outline-none text-sm">
+      <button id="msgSend" class="px-4 py-2 rounded-xl bg-amber-500 text-navy-900 font-semibold hover:scale-105 transition">Send</button>
+    </div>
+  </div>`;
+  if (state.msgUnsub) state.msgUnsub();
+  state.msgUnsub = store.subscribeMessages(cid, (msgs) => {
+    const list = document.getElementById("msgList");
+    list.innerHTML = msgs.length ? msgs.map(m => `
+      <div class="flex ${m.from === state.user.uid ? 'justify-end' : 'justify-start'}">
+        <div class="max-w-[78%] px-3 py-2 rounded-2xl text-sm ${m.from === state.user.uid ? 'bg-amber-500 text-navy-900 rounded-br-sm' : 'bg-cream-200 dark:bg-navy-700 rounded-bl-sm'}">
+          <p>${escapeHtml(m.text)}</p>
+          <p class="text-[10px] opacity-60 mt-1">${m.createdAt?.seconds ? new Date(m.createdAt.seconds*1000).toLocaleTimeString() : ""}</p>
+        </div>
+      </div>`).join("") : `<p class="text-xs text-navy-400 text-center py-8">No messages yet. Say hi! 👋</p>`;
+    list.scrollTop = list.scrollHeight;
+  });
+  const otherId = cid.split("_").find(x => x !== state.user.uid);
+  const input = document.getElementById("msgInput");
+  const send = async () => {
+    const text = input.value.trim(); if (!text) return;
+    input.value = "";
+    await store.sendMessage(state.user.uid, otherId, text, state.profile?.displayName || "", state.profile?.handle || "");
+  };
+  document.getElementById("msgSend").onclick = send;
+  input.addEventListener("keydown", (e) => { if (e.key === "Enter") send(); });
+};
+
+window.openDM = async (targetUid) => {
+  if (targetUid === state.user.uid) return toast("That's you!");
+  const cid = store.conversationId(state.user.uid, targetUid);
+  navigate("inbox");
+  setTimeout(() => openConversation(cid), 300);
+};
 
 /* ---------------- Shell / Nav ---------------- */
 function renderShell() {
@@ -402,8 +788,16 @@ function renderShell() {
         <div class="flex items-center gap-1 sm:gap-2 text-sm">
           <button data-route="marketplace" onclick="navigate('marketplace')" class="nav-link px-2 sm:px-3 py-2 font-medium hover:text-amber-600 dark:hover:text-amber-400">Browse</button>
           <button data-route="connect" onclick="navigate('connect')" class="nav-link px-2 sm:px-3 py-2 font-medium hover:text-amber-600 dark:hover:text-amber-400">Connect</button>
+          <button data-route="stories" onclick="navigate('stories')" class="nav-link px-2 sm:px-3 py-2 font-medium hover:text-amber-600 dark:hover:text-amber-400 flex items-center gap-1"><i data-lucide="aperture" class="w-4 h-4"></i> Stories</button>
           <button data-route="writer" onclick="navigate('writer')" class="nav-link px-2 sm:px-3 py-2 font-medium hover:text-amber-600 dark:hover:text-amber-400 flex items-center gap-1"><i data-lucide="pen-line" class="w-4 h-4"></i> Write</button>
           <button data-route="studio" onclick="navigate('studio')" class="nav-link px-2 sm:px-3 py-2 font-medium hover:text-amber-600 dark:hover:text-amber-400">AI Studio</button>
+          <div class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-xs font-bold text-amber-700 dark:text-amber-400">
+            <i data-lucide="coins" class="w-3.5 h-3.5"></i> <span id="coinPill">${state.profile?.coins ?? 0}</span>
+          </div>
+          <button data-route="inbox" onclick="navigate('inbox')" class="relative p-2 rounded-full hover:bg-cream-200 dark:hover:bg-navy-800 transition" title="Messages">
+            <i data-lucide="mail" class="w-5 h-5"></i>
+            <span id="inboxDot" class="hidden absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-amber-500 rounded-full ring-2 ring-cream-50 dark:ring-navy-900"></span>
+          </button>
           <button onclick="toggleTheme()" class="ml-1 p-2 rounded-full hover:bg-cream-200 dark:hover:bg-navy-800 transition" title="Toggle theme">
             <i data-lucide="moon" id="tiMoon" class="w-5 h-5"></i><i data-lucide="sun" id="tiSun" class="w-5 h-5 hidden"></i>
           </button>
@@ -441,7 +835,7 @@ function renderShell() {
     <button class="bn-btn" data-route="home" onclick="navigate('home')"><i data-lucide="home" class="w-5 h-5"></i>Home</button>
     <button class="bn-btn" data-route="marketplace" onclick="navigate('marketplace')"><i data-lucide="book-open" class="w-5 h-5"></i>Browse</button>
     <button class="bn-btn" data-route="connect" onclick="navigate('connect')"><i data-lucide="users" class="w-5 h-5"></i>Connect</button>
-    <button class="bn-btn" data-route="studio" onclick="navigate('studio')"><i data-lucide="sparkles" class="w-5 h-5"></i>Studio</button>
+    <button class="bn-btn" data-route="stories" onclick="navigate('stories')"><i data-lucide="aperture" class="w-5 h-5"></i>Stories</button>
     <button class="bn-btn" data-route="writer" onclick="navigate('writer')"><i data-lucide="pen-line" class="w-5 h-5"></i>Write</button>
     <button class="bn-btn" data-route="dashboard" onclick="toggleProfile()"><i data-lucide="user" class="w-5 h-5"></i>You</button>
   </nav>
@@ -525,6 +919,8 @@ window.navigate = (route) => {
 function renderRoute() {
   const app = $("#app");
   app.innerHTML = "";
+  if (state.route === "inbox") { renderInbox(app); refreshIcons(); observeReveals(); setActiveNav(); app.classList.remove("animate-viewIn"); void app.offsetWidth; app.classList.add("animate-viewIn"); return; }
+  if (state.route === "stories") { renderStoriesFeed(app); refreshIcons(); observeReveals(); setActiveNav(); app.classList.remove("animate-viewIn"); void app.offsetWidth; app.classList.add("animate-viewIn"); return; }
   ({
     home: renderHome, marketplace: renderMarketplace, connect: renderConnect,
     studio: renderStudio, dashboard: renderDashboard, writer: renderWriter
@@ -1018,10 +1414,11 @@ window.openUserProfile = async (uid) => {
     <div class="px-6">
       <div class="flex items-end justify-between">
         ${avatar}
-        <div class="mb-2">
+        <div class="mb-2 flex gap-2">
           ${isMe
             ? `<button onclick="openEditProfile()" class="px-4 py-2 rounded-full bg-cream-200 dark:bg-navy-700 font-medium hover:bg-cream-300 dark:hover:bg-navy-600 transition text-sm">Edit profile</button>`
-            : `<button id="followBtn" class="px-5 py-2 rounded-full font-semibold text-sm transition ${following ? "bg-cream-200 dark:bg-navy-700 hover:bg-cream-300 dark:hover:bg-navy-600" : "bg-navy-800 dark:bg-amber-500 dark:text-navy-900 text-cream-100 hover:scale-105"}">${following ? "Following" : "Follow"}</button>`}
+            : `<button onclick="openDM('${uid}')" class="px-4 py-2 rounded-full bg-white border border-cream-300 dark:border-navy-600 dark:bg-navy-800 text-sm font-medium hover:bg-cream-100 dark:hover:bg-navy-700 transition flex items-center gap-1.5"><i data-lucide="mail" class="w-4 h-4"></i> Message</button>
+               <button id="followBtn" class="px-5 py-2 rounded-full font-semibold text-sm transition ${following ? "bg-cream-200 dark:bg-navy-700 hover:bg-cream-300 dark:hover:bg-navy-600" : "bg-navy-800 dark:bg-amber-500 dark:text-navy-900 text-cream-100 hover:scale-105"}">${following ? "Following" : "Follow"}</button>`}
         </div>
       </div>
       <div class="mt-3">
@@ -1363,18 +1760,52 @@ window.openBookReader = async (bookId) => {
   const body = $("#rBody"), rTitle = $("#rTitle"), rText = $("#rText"),
         prev = $("#rPrev"), next = $("#rNext"), prog = $("#rProg"), sel = $("#rChapSel");
 
-  const paint = () => {
+  // DraftSoul model: Ch1 free, Ch2-3 free after signup, Ch4+ costs 10 coins (writers keep rights, paid from reading time)
+  let readingStart = Date.now();
+  const paint = async () => {
     const c = chapters[idx];
-    rTitle.textContent = c?.title || "The End";
-    rText.textContent = c?.content?.trim()
-      ? c.content
-      : (idx === chapters.length ? "— You've reached the end of this book. Hope you enjoyed the journey! —" : "This chapter is still being written by the author…");
+    const isUnlocked = await store.isChapterUnlocked(state.user.uid, bookId, idx, state.profile);
+    if (!isUnlocked) {
+      const coins = await store.getUserCoins(state.user.uid);
+      rTitle.innerHTML = `${escapeHtml(c?.title || "Locked Chapter")} <span class="ml-2 text-xs px-2 py-1 rounded-full bg-amber-500 text-navy-900">🔒 Locked</span>`;
+      rText.innerHTML = `
+        <div class="text-center py-8">
+          <div class="w-16 h-16 mx-auto rounded-2xl bg-amber-500/10 flex items-center justify-center mb-4"><i data-lucide="lock" class="w-8 h-8 text-amber-500"></i></div>
+          <h3 class="font-bold text-lg mb-2">This chapter is locked</h3>
+          <p class="text-sm text-navy-500 dark:text-cream-300/70 mb-1">DraftSoul-style: Ch.1 always free • Ch.2-3 free after signup</p>
+          <p class="text-xs text-navy-400 mb-4">Unlock for <b>10 coins</b> • You have <b class="text-amber-600">${coins} coins</b> • Author keeps rights, paid from reading time</p>
+          <button id="unlockBtn" class="px-6 py-2.5 rounded-full bg-amber-500 text-navy-900 font-bold hover:scale-105 transition ${coins < 10 ? 'opacity-50 cursor-not-allowed' : 'btn-shine'}">${coins < 10 ? 'Need 10 coins' : 'Unlock for 10 coins ✨'}</button>
+          ${coins < 10 ? '<p class="text-xs text-red-500 mt-2">Daily reading rewards more coins!</p>' : ''}
+        </div>`;
+      refreshIcons();
+      const ub = document.getElementById('unlockBtn');
+      if (ub && coins >= 10) ub.onclick = async () => {
+        ub.disabled = true; ub.textContent = 'Unlocking…';
+        try {
+          await store.spendCoins(state.user.uid, 10);
+          await store.unlockChapter(state.user.uid, bookId, idx);
+          state.profile.coins = coins - 10;
+          const cp = document.getElementById('coinPill'); if (cp) cp.textContent = state.profile.coins;
+          toast('Chapter unlocked! 10 coins spent');
+          paint();
+        } catch (e) { toast(e.message || 'Could not unlock'); ub.disabled = false; ub.textContent = 'Unlock for 10 coins ✨'; }
+      };
+    } else {
+      rTitle.textContent = c?.title || "The End";
+      rText.textContent = c?.content?.trim()
+        ? c.content
+        : (idx === chapters.length ? "— You've reached the end of this book. Hope you enjoyed the journey! —" : "This chapter is still being written by the author…");
+      // Track reading time for author earnings (DraftSoul paid-from-time model)
+      const elapsed = Math.floor((Date.now() - readingStart) / 1000);
+      if (elapsed > 5) store.trackReadingTime(state.user.uid, elapsed, book.ownerId).catch(() => {});
+      readingStart = Date.now();
+    }
     prev.disabled = idx <= 0;
     next.disabled = idx >= chapters.length;
     prog.textContent = `Chapter ${Math.min(idx + 1, chapters.length)} of ${chapters.length}`;
     sel.value = String(idx);
     window.scrollTo({ top: 0 });
-    store.saveReadingProgress(state.user.uid, bookId, idx, 0).catch(() => {});
+    if (isUnlocked) store.saveReadingProgress(state.user.uid, bookId, idx, 0).catch(() => {});
   };
 
   sel.onchange = () => { idx = parseInt(sel.value); paint(); };
