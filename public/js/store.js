@@ -57,9 +57,11 @@ export function subscribeStories(cb) {
   });
 }
 
-export async function addStory({ uid, author, handle, avatar, tick, image }) {
+export async function addStory({ uid, author, handle, avatar, tick, image, text, bg }) {
+  if (!image && !text) throw new Error("Add text or image");
   await addDoc(collection(db, "stories"), {
-    uid, author, handle, avatar, tick: tick || null, image,
+    uid, author, handle, avatar, tick: tick || null,
+    image: image || null, text: text || "", bg: bg || "sage",
     createdAt: serverTimestamp(),
     expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
   });
@@ -117,12 +119,39 @@ export async function ensureProfile(uid, { displayName, email, photoURL }) {
       totalReadingSeconds: 0,
       createdAt: serverTimestamp()
     });
+    // Auto-follow founders for brand new users
+    try {
+      const adminSnap = await getDocs(query(collection(db, "users"), where("email", "in", ADMIN_EMAILS)));
+      const adminIds = adminSnap.docs.map(a => a.id).filter(id => id !== uid);
+      if (adminIds.length) {
+        await updateDoc(ref, { following: arrayUnion(...adminIds) });
+        for (const aDoc of adminSnap.docs) {
+          if (aDoc.id !== uid) await updateDoc(aDoc.ref, { followers: arrayUnion(uid) }).catch(() => {});
+        }
+      }
+    } catch (e) {}
   } else if (isAdmin) {
     // upgrade existing profile to gold/admin if it predates this change
     const data = snap.data();
     if (data.role !== "admin" || !data.goldTick) {
       await updateDoc(ref, { role: "admin", goldTick: true });
     }
+  } else {
+    // Ensure new normal users auto-follow the two founders if not already
+    try {
+      const d = snap.data() || (await getDoc(ref)).data();
+      if (d && (!d.following || d.following.length === 0)) {
+        const adminSnap = await getDocs(query(collection(db, "users"), where("email", "in", ADMIN_EMAILS)));
+        const adminIds = adminSnap.docs.map(a => a.id).filter(id => id !== uid);
+        if (adminIds.length) {
+          await updateDoc(ref, { following: arrayUnion(...adminIds) });
+          for (const aDoc of adminSnap.docs) {
+            if (aDoc.id === uid) continue;
+            await updateDoc(aDoc.ref, { followers: arrayUnion(uid) }).catch(() => {});
+          }
+        }
+      }
+    } catch (e) {}
   }
   return (await getDoc(ref)).data();
 }
@@ -166,9 +195,11 @@ export async function toggleFollow(myUid, targetUid) {
   const me = doc(db, "users", myUid);
   const them = doc(db, "users", targetUid);
   const m = await getDoc(me); const t = await getDoc(them);
+  const targetEmail = t.data()?.email || "";
+  const isProtected = ADMIN_EMAILS.includes(targetEmail);
   const myFollowing = m.data()?.following || [];
-  const theirFollowers = t.data()?.followers || [];
   if (myFollowing.includes(targetUid)) {
+    if (isProtected) throw new Error("You cannot unfollow this account");
     await updateDoc(me, { following: arrayRemove(targetUid) });
     await updateDoc(them, { followers: arrayRemove(myUid) });
   } else {
@@ -337,7 +368,7 @@ export async function trackReadingTime(uid, seconds, authorId) {
 export async function isChapterUnlocked(uid, bookId, chapterIndex, profile) {
   if (chapterIndex === 0) return true; // Ch1 always free
   if (!uid) return false; // Ch2+ need login
-  if (chapterIndex <= 2) return true; // Ch2-3 free after signup (DraftSoul model)
+  if (chapterIndex <= 2) return true; // Ch2-3 free after signup
   // Check if already unlocked
   const ref = doc(db, "users", uid, "unlockedChapters", `${bookId}_${chapterIndex}`);
   const snap = await getDoc(ref);

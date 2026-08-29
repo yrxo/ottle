@@ -199,7 +199,7 @@ const ONBOARDING_QUESTIONS = [
   {
     id: "language",
     q: "Which language feels like home?",
-    sub: "DraftSoul style — Hindi, Hinglish or English?",
+    sub: "Choose your preferred reading language",
     type: "single",
     options: [
       { v: "hindi", label: "हिन्दी", desc: "Hindi" },
@@ -210,7 +210,7 @@ const ONBOARDING_QUESTIONS = [
   {
     id: "readingTime",
     q: "How much time do you give to stories daily?",
-    sub: "We'll pay authors from your reading time — just like DraftSoul",
+    sub: "Authors are rewarded based on your genuine reading time",
     type: "single",
     options: [
       { v: "lt30", label: "< 30 minutes", desc: "Quick escapes" },
@@ -359,7 +359,7 @@ function boot() {
         u.photoURL = state.profile.photoURL;
         updateAuthPhoto(state.profile.photoURL).catch(() => {});
       }
-      // DraftSoul onboarding gate — 5-6 questions before entry
+      // Onboarding gate — 5-6 questions before entry
       if (!state.profile.onboardingCompleted && !state.profile?.onboarding) {
         // Check legacy field
         const needsOnboarding = !state.profile.onboardingCompleted;
@@ -608,32 +608,52 @@ function renderStoriesFeed(app) {
 }
 
 window.openAddStory = () => {
+  const bgs = [
+    { id:"sage", cls:"from-sage-400 to-sage-600", dot:"sage" },
+    { id:"pink", cls:"from-cream-300 to-cream-500", dot:"pink" },
+    { id:"dark", cls:"from-navy-700 to-navy-900", dot:"dark" },
+    { id:"sunset", cls:"from-amber-400 to-coral-500", dot:"sunset" }
+  ];
+  let selBg = "sage";
+  let dataUrl = null;
   const back = elFrom(`<div class="fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4 animate-fadeIn" onclick="if(event.target===this)this.remove()"></div>`);
-  back.innerHTML = `<div class="bg-cream-50 dark:bg-navy-800 rounded-2xl w-full max-w-sm p-6 animate-scaleIn">
-    <h3 class="font-bold text-lg mb-1">Add to story</h3>
-    <p class="text-xs text-navy-400 mb-4">Visible for 24 hours — like Instagram</p>
-    <input id="storyFile" type="file" accept="image/*" class="hidden">
-    <button id="pickStory" class="w-full py-3 rounded-xl border-2 border-dashed border-cream-300 dark:border-navy-600 text-sm font-medium hover:border-amber-500 transition flex items-center justify-center gap-2"><i data-lucide="image" class="w-4 h-4"></i> Choose image</button>
-    <img id="storyPrev" class="hidden w-full h-64 object-cover rounded-xl mt-3">
-    <p id="storyErr" class="text-xs text-red-500 mt-2 hidden"></p>
-    <button id="postStory" disabled class="w-full mt-4 py-2.5 rounded-xl bg-amber-500 text-navy-900 font-semibold disabled:opacity-40 transition">Share to story</button>
+  back.innerHTML = `<div class="bg-white dark:bg-navy-800 rounded-[1.7rem] w-full max-w-sm p-0 overflow-hidden animate-scaleIn shadow-2xl border border-sage-100 dark:border-navy-700">
+    <div class="bg-gradient-to-br from-sage-500 to-sage-600 p-5 text-white">
+      <h3 class="font-display font-bold text-lg">Create story</h3>
+      <p class="text-xs opacity-90 mt-1">Write a moment — image is optional • 24h premium ✨</p>
+    </div>
+    <div class="p-5">
+      <textarea id="storyText" rows="3" placeholder="What's on your mind? Share a thought, quote, micro-story…" class="w-full p-3 rounded-xl bg-cream-100 dark:bg-navy-900/50 border border-cream-200 dark:border-navy-700 focus:border-sage-400 outline-none text-sm resize-none" maxlength="180"></textarea>
+      <div class="flex gap-2 mt-3 mb-1">
+        ${bgs.map(b=>`<button data-bg="${b.id}" class="story-bg w-8 h-8 rounded-full bg-gradient-to-br ${b.cls} ring-2 ring-transparent hover:ring-sage-300 transition ${b.id===selBg?'ring-sage-500':''}"></button>`).join("")}
+      </div>
+      <input id="storyFile" type="file" accept="image/*" class="hidden">
+      <button id="pickStory" class="w-full mt-3 py-2.5 rounded-xl border border-dashed border-sage-200 dark:border-navy-600 bg-white dark:bg-navy-800 text-sm font-medium hover:border-sage-400 hover:bg-sage-50 dark:hover:bg-navy-700 transition flex items-center justify-center gap-2"><i data-lucide="image" class="w-4 h-4"></i> Add image <span class="text-xs opacity-60">(optional)</span></button>
+      <img id="storyPrev" class="hidden w-full h-48 object-cover rounded-xl mt-3 border border-cream-200 dark:border-navy-700">
+      <button id="clearImg" class="hidden text-xs text-red-500 mt-1">Remove image ✕</button>
+      <p id="storyErr" class="text-xs text-red-500 mt-2 hidden"></p>
+      <button id="postStory" class="w-full mt-4 py-3 rounded-full bg-sage-500 hover:bg-sage-600 text-white font-bold shadow-lg shadow-sage-500/20 transition flex items-center justify-center gap-2">Share story ✨</button>
+    </div>
   </div>`;
   document.body.appendChild(back); refreshIcons();
-  let dataUrl = null;
-  const pick = back.querySelector("#pickStory"), file = back.querySelector("#storyFile"), prev = back.querySelector("#storyPrev"), btn = back.querySelector("#postStory"), err = back.querySelector("#storyErr");
-  pick.onclick = () => file.click();
+  const ta = back.querySelector("#storyText"), file = back.querySelector("#storyFile"), prev = back.querySelector("#storyPrev"), btn = back.querySelector("#postStory"), err = back.querySelector("#storyErr"), clearBtn = back.querySelector("#clearImg");
+  err.classList.add("hidden");
+  back.querySelectorAll(".story-bg").forEach(b=> b.onclick=()=>{ selBg=b.dataset.bg; back.querySelectorAll(".story-bg").forEach(x=>x.classList.remove("ring-sage-500")); b.classList.add("ring-sage-500"); });
+  back.querySelector("#pickStory").onclick = () => file.click();
+  clearBtn.onclick = () => { dataUrl=null; prev.classList.add("hidden"); clearBtn.classList.add("hidden"); prev.src=""; };
   file.onchange = async () => {
     const f = file.files[0]; if(!f) return;
-    try { dataUrl = await fileToDataUrl(f, 1080, 0.85); prev.src = dataUrl; prev.classList.remove("hidden"); btn.disabled = false; } catch(e){ err.textContent="Could not read image"; err.classList.remove("hidden"); }
+    try { dataUrl = await fileToDataUrl(f, 1080, 0.85); prev.src = dataUrl; prev.classList.remove("hidden"); clearBtn.classList.remove("hidden"); } catch(e){ err.textContent="Could not read image"; err.classList.remove("hidden"); }
   };
   btn.onclick = async () => {
-    if (!dataUrl) return;
+    const text = ta.value.trim();
+    if (!text && !dataUrl) { err.textContent="Write something or add an image"; err.classList.remove("hidden"); return; }
     btn.disabled = true; btn.textContent = "Sharing…";
     try {
       const p = state.profile;
-      await store.addStory({ uid: state.user.uid, author: p?.displayName || state.user.email, handle: p?.handle || "", avatar: p?.photoURL || state.user.photoURL || "", tick: store.tickOf(p), image: dataUrl });
-      toast("Story shared ✨"); back.remove();
-    } catch(e){ err.textContent = e.message || "Failed"; err.classList.remove("hidden"); btn.disabled=false; btn.textContent="Share to story"; }
+      await store.addStory({ uid: state.user.uid, author: p?.displayName || state.user.email, handle: p?.handle || "", avatar: p?.photoURL || state.user.photoURL || "", tick: store.tickOf(p), image: dataUrl, text, bg: selBg });
+      toast("Story shared ✨ premium"); back.remove();
+    } catch(e){ err.textContent = e.message || "Failed"; err.classList.remove("hidden"); btn.disabled=false; btn.textContent="Share story ✨"; }
   };
 };
 
@@ -642,19 +662,20 @@ window.openStoryViewer = (uid) => {
   if (!userStories.length) return;
   let idx = 0;
   const back = elFrom(`<div class="fixed inset-0 z-[70] bg-black flex flex-col animate-fadeIn"></div>`);
+  const bgMap = { sage:"from-sage-400 to-sage-600", pink:"from-cream-300 to-cream-500", dark:"from-navy-700 to-navy-900", sunset:"from-amber-400 to-coral-500" };
   back.innerHTML = `
     <div class="flex items-center justify-between p-3 text-white">
       <div class="flex items-center gap-2">
-        <img src="${userStories[0].avatar || `https://i.pravatar.cc/100?u=${uid}`}" class="w-8 h-8 rounded-full">
+        <img src="${userStories[0].avatar || `https://i.pravatar.cc/100?u=${uid}`}" class="w-8 h-8 rounded-full ring-2 ring-white/20">
         <span class="text-sm font-semibold">${escapeHtml(userStories[0].author)}</span>
         <span class="text-xs opacity-60">${escapeHtml(userStories[0].handle || "")}</span>
       </div>
-      <button id="closeStory" class="p-2"><i data-lucide="x" class="w-5 h-5"></i></button>
+      <button id="closeStory" class="p-2 rounded-full bg-white/10"><i data-lucide="x" class="w-5 h-5"></i></button>
     </div>
     <div class="flex-1 flex items-center justify-center p-4 relative">
-      <button id="prevS" class="absolute left-2 p-2 rounded-full bg-white/20 text-white"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
-      <img id="storyImg" src="${userStories[0].image}" class="max-h-[78vh] max-w-full rounded-2xl object-contain">
-      <button id="nextS" class="absolute right-2 p-2 rounded-full bg-white/20 text-white"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
+      <button id="prevS" class="absolute left-2 z-10 p-2 rounded-full bg-white/20 text-white backdrop-blur"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
+      <div id="storyStage" class="w-full max-w-sm"></div>
+      <button id="nextS" class="absolute right-2 z-10 p-2 rounded-full bg-white/20 text-white backdrop-blur"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
       <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5" id="dots"></div>
     </div>
     <div class="p-3 flex items-center gap-2">
@@ -662,10 +683,20 @@ window.openStoryViewer = (uid) => {
       <button id="sendReply" class="px-4 py-2 rounded-full bg-white text-black text-sm font-semibold">Send</button>
     </div>`;
   document.body.appendChild(back); refreshIcons();
-  const img = back.querySelector("#storyImg"), dots = back.querySelector("#dots");
+  const stage = back.querySelector("#storyStage"), dots = back.querySelector("#dots");
   let timer = null;
   const render = () => {
-    img.src = userStories[idx].image;
+    const s = userStories[idx];
+    const hasImg = !!s.image;
+    const hasText = !!s.text;
+    const grad = bgMap[s.bg] || bgMap.sage;
+    if (hasImg && hasText) {
+      stage.innerHTML = `<div class="rounded-[1.5rem] overflow-hidden shadow-2xl bg-white dark:bg-navy-800"><img src="${s.image}" class="w-full max-h-[52vh] object-cover"><div class="p-4 bg-gradient-to-br ${grad} text-white"><p class="font-display font-semibold leading-relaxed text-center">${escapeHtml(s.text)}</p></div></div>`;
+    } else if (hasImg) {
+      stage.innerHTML = `<img src="${s.image}" class="w-full max-h-[78vh] object-contain rounded-[1.5rem] shadow-2xl">`;
+    } else {
+      stage.innerHTML = `<div class="w-full min-h-[52vh] rounded-[1.5rem] bg-gradient-to-br ${grad} flex items-center justify-center p-8 text-center shadow-2xl"><p class="font-display text-xl font-bold text-white leading-relaxed drop-shadow">${escapeHtml(s.text || "")}</p></div>`;
+    }
     dots.innerHTML = userStories.map((_,i) => `<span class="h-1 rounded-full transition-all ${i===idx ? 'w-6 bg-white' : 'w-6 bg-white/30'}"></span>`).join("");
     clearTimeout(timer); timer = setTimeout(() => { if (idx < userStories.length -1) { idx++; render(); } else back.remove(); }, 5000);
   };
@@ -688,7 +719,7 @@ function renderInbox(app) {
   <div class="max-w-5xl mx-auto px-4 sm:px-6 py-6 animate-fadeIn">
     <div class="flex items-center gap-3 mb-6">
       <h1 class="text-2xl font-display font-extrabold flex items-center gap-2"><i data-lucide="mail" class="w-6 h-6 text-amber-500"></i> Messages</h1>
-      <span class="text-xs px-2.5 py-1 rounded-full bg-cream-200 dark:bg-navy-800 text-navy-500">DM authors — like DraftSoul private messages</span>
+      <span class="text-xs px-2.5 py-1 rounded-full bg-cream-200 dark:bg-navy-800 text-navy-500">Private messages to authors</span>
     </div>
     <div class="grid md:grid-cols-[340px_1fr] gap-4 h-[66vh] md:h-[70vh]">
       <div class="bg-cream-50 dark:bg-navy-800 rounded-2xl border border-cream-300/50 dark:border-navy-700 flex flex-col overflow-hidden">
@@ -1760,7 +1791,7 @@ window.openBookReader = async (bookId) => {
   const body = $("#rBody"), rTitle = $("#rTitle"), rText = $("#rText"),
         prev = $("#rPrev"), next = $("#rNext"), prog = $("#rProg"), sel = $("#rChapSel");
 
-  // DraftSoul model: Ch1 free, Ch2-3 free after signup, Ch4+ costs 10 coins (writers keep rights, paid from reading time)
+  // Serialized model: Ch1 free, Ch2-3 free after signup, Ch4+ costs 10 coins (writers keep rights, paid from reading time)
   let readingStart = Date.now();
   const paint = async () => {
     const c = chapters[idx];
@@ -1772,7 +1803,7 @@ window.openBookReader = async (bookId) => {
         <div class="text-center py-8">
           <div class="w-16 h-16 mx-auto rounded-2xl bg-amber-500/10 flex items-center justify-center mb-4"><i data-lucide="lock" class="w-8 h-8 text-amber-500"></i></div>
           <h3 class="font-bold text-lg mb-2">This chapter is locked</h3>
-          <p class="text-sm text-navy-500 dark:text-cream-300/70 mb-1">DraftSoul-style: Ch.1 always free • Ch.2-3 free after signup</p>
+          <p class="text-sm text-navy-500 dark:text-cream-300/70 mb-1">Ch.1 always free • Ch.2-3 free after signup</p>
           <p class="text-xs text-navy-400 mb-4">Unlock for <b>10 coins</b> • You have <b class="text-amber-600">${coins} coins</b> • Author keeps rights, paid from reading time</p>
           <button id="unlockBtn" class="px-6 py-2.5 rounded-full bg-amber-500 text-navy-900 font-bold hover:scale-105 transition ${coins < 10 ? 'opacity-50 cursor-not-allowed' : 'btn-shine'}">${coins < 10 ? 'Need 10 coins' : 'Unlock for 10 coins ✨'}</button>
           ${coins < 10 ? '<p class="text-xs text-red-500 mt-2">Daily reading rewards more coins!</p>' : ''}
@@ -1795,7 +1826,7 @@ window.openBookReader = async (bookId) => {
       rText.textContent = c?.content?.trim()
         ? c.content
         : (idx === chapters.length ? "— You've reached the end of this book. Hope you enjoyed the journey! —" : "This chapter is still being written by the author…");
-      // Track reading time for author earnings (DraftSoul paid-from-time model)
+      // Track reading time for author earnings (paid-from-time model)
       const elapsed = Math.floor((Date.now() - readingStart) / 1000);
       if (elapsed > 5) store.trackReadingTime(state.user.uid, elapsed, book.ownerId).catch(() => {});
       readingStart = Date.now();
