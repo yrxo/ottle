@@ -38,10 +38,6 @@ export async function toggleLike(postId, uid) {
   else await updateDoc(ref, { likedBy: arrayUnion(uid), likes: increment(1) });
 }
 
-export async function addComment(postId) {
-  await updateDoc(doc(db, "posts", postId), { comments: increment(1) });
-}
-
 export async function deletePostAsAdmin(postId) {
   await deleteDoc(doc(db, "posts", postId));
 }

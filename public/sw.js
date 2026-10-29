@@ -1,5 +1,5 @@
 // sw.js — Ottle PWA service worker (offline cache + installable)
-const CACHE_NAME = "ottle-v1";
+const CACHE_NAME = "ottle-v3";
 const ASSETS = [
   "./",
   "./index.html",

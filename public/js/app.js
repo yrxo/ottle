@@ -85,11 +85,15 @@ function coverArt(book, cls = "", scale = 1) {
     </div></div>`;
 }
 
-function toast(msg) {
+function toast(msg, type = "info") {
   const t = $("#toast");
-  t.textContent = msg; t.classList.remove("hidden");
-  t.className = "fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] px-4 py-2.5 rounded-full bg-navy-800 dark:bg-amber-500 dark:text-navy-900 text-cream-100 text-sm shadow-xl animate-scaleIn";
-  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.add("hidden"), 2600);
+  const icons = { info: "info", success: "check-circle", warn: "alert-triangle", error: "alert-circle" };
+  const colors = { info: "bg-amber-500 text-navy-900", success: "bg-sage-500 text-white", warn: "bg-orange-500 text-white", error: "bg-red-500 text-white" };
+  t.innerHTML = `<i data-lucide="${icons[type]}" class="w-4 h-4 mr-2"></i>${escapeHtml(msg)}`;
+  t.className = "fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] px-5 py-3 rounded-full text-sm font-medium shadow-xl animate-scaleIn flex items-center gap-2 " + colors[type];
+  t.classList.remove("hidden");
+  refreshIcons();
+  clearTimeout(toast._t); toast._t = setTimeout(() => { t.style.opacity = "0"; setTimeout(() => t.classList.add("hidden"), 300); }, 3000);
 }
 
 function applyTheme() {
@@ -846,7 +850,6 @@ window.openConversation = async (cid) => {
       </div>`).join("") : `<p class="text-xs text-navy-400 text-center py-8">No messages yet. Say hi! 👋</p>`;
     list.scrollTop = list.scrollHeight;
   });
-  const otherId = cid.split("_").find(x => x !== state.user.uid);
   const input = document.getElementById("msgInput");
   const send = async () => {
     const text = input.value.trim(); if (!text) return;
@@ -978,7 +981,7 @@ function renderShell() {
       </div>
     </div>
   </nav>
-  <main id="app" class="pb-20 lg:pb-0"></main>
+  <main id="app" class="pb-20 lg:pb-0 page-transition"></main>
   <nav class="bottom-nav lg:hidden">
     <button class="bn-btn" data-route="home" onclick="navigate('home')"><i data-lucide="home" class="w-5 h-5"></i>Home</button>
     <button class="bn-btn" data-route="marketplace" onclick="navigate('marketplace')"><i data-lucide="book-open" class="w-5 h-5"></i>Browse</button>
@@ -1074,8 +1077,12 @@ function attachAuthorSearch(id) {
 window.navigate = (route) => {
   if (state.route === "connect" && route !== "connect") cleanup();
   state.route = route;
+  const app = $("#app");
+  app.classList.remove("page-transition");
+  void app.offsetWidth; // trigger reflow
   $$(".nav-link").forEach(b => b.classList.remove("active"));
   renderRoute();
+  app.classList.add("page-transition");
   window.scrollTo({ top: 0, behavior: "smooth" });
 };
 
