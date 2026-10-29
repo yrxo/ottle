@@ -1,0 +1,593 @@
+// public/js/store.js — Firestore data layer for Ottle (real data only)
+import {
+  collection, doc, getDocs, getDoc, addDoc, setDoc, updateDoc, deleteDoc,
+  onSnapshot, query, orderBy, serverTimestamp, arrayUnion, arrayRemove,
+  increment, where, limit
+} from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
+import { db } from "./firebase.js";
+
+// Gold-tick admins (pre-verified, full access)
+export const ADMIN_EMAILS = ["raptorayush8@gmail.com", "r4908994@gmail.com"];
+export const BLUE_TICK_YEARLY_INR = 19;
+const YEAR_MS = 365 * 24 * 60 * 60 * 1000;
+
+export const tickOf = (profile) =>
+  profile?.goldTick ? "gold" : profile?.blueTick ? "blue" : null;
+
+/* ---------- Posts (Ottle Connect) ---------- */
+export function subscribePosts(onChange) {
+  const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
+  return onSnapshot(q, (snap) => {
+    onChange(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+  });
+}
+
+export async function addPost({ uid, author, handle, avatar, tick, content, bookLink, image }) {
+  await addDoc(collection(db, "posts"), {
+    uid, author, handle, avatar, tick: tick || null, content, bookLink: bookLink || null,
+    image: image || null,
+    createdAt: serverTimestamp(), likes: 0, likedBy: [], comments: 0, shares: 0
+  });
+}
+
+export async function toggleLike(postId, uid) {
+  const ref = doc(db, "posts", postId);
+  const snap = await getDoc(ref);
+  const likedBy = snap.data()?.likedBy || [];
+  if (likedBy.includes(uid)) await updateDoc(ref, { likedBy: arrayRemove(uid), likes: increment(-1) });
+  else await updateDoc(ref, { likedBy: arrayUnion(uid), likes: increment(1) });
+}
+
+export async function addComment(postId) {
+  await updateDoc(doc(db, "posts", postId), { comments: increment(1) });
+}
+
+export async function deletePostAsAdmin(postId) {
+  await deleteDoc(doc(db, "posts", postId));
+}
+
+/* ---------- Stories (Insta-style 24h) ---------- */
+export function subscribeStories(cb) {
+  const q = query(collection(db, "stories"), orderBy("createdAt", "desc"));
+  return onSnapshot(q, (snap) => {
+    const now = Date.now();
+    const list = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      .filter(s => !s.expiresAt || (s.expiresAt.seconds ? s.expiresAt.seconds * 1000 : s.expiresAt) > now);
+    cb(list);
+  });
+}
+
+export async function addStory({ uid, author, handle, avatar, tick, image, text, bg }) {
+  if (!image && !text) throw new Error("Add text or image");
+  await addDoc(collection(db, "stories"), {
+    uid, author, handle, avatar, tick: tick || null,
+    image: image || null, text: text || "", bg: bg || "sage",
+    createdAt: serverTimestamp(),
+    expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
+  });
+}
+
+export async function deleteStory(storyId, uid) {
+  const ref = doc(db, "stories", storyId);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) throw new Error("Story not found");
+  if (snap.data().uid !== uid && !ADMIN_EMAILS.includes(snap.data().email || "")) {
+    // allow owner or admin (check via caller profile in UI, but double check here via uid only)
+    if (snap.data().uid !== uid) throw new Error("Not allowed");
+  }
+  await deleteDoc(ref);
+}
+
+/* ---------- Marketplace books (real, added by users/admins) ---------- */
+export async function getBooks() {
+  const snap = await getDocs(query(collection(db, "books"), orderBy("title")));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(b => b.status !== "draft" && b.ownerId);
+}
+
+export async function addBook(book) {
+  return addDoc(collection(db, "books"), book);
+}
+
+export async function deleteBook(id) {
+  await deleteDoc(doc(db, "books", id));
+}
+
+/* ---------- Users (real profiles) ---------- */
+export async function ensureProfile(uid, { displayName, email, photoURL }) {
+  const ref = doc(db, "users", uid);
+  const snap = await getDoc(ref);
+  const isAdmin = ADMIN_EMAILS.includes(email);
+  if (!snap.exists()) {
+    await setDoc(ref, {
+      displayName: displayName || email?.split("@")[0] || "Ottle Author",
+      username: (email?.split("@")[0] || "author").toLowerCase().replace(/[^a-z0-9_]/g, ""),
+      email: email || "",
+      photoURL: photoURL || "",
+      handle: "@" + (email?.split("@")[0] || "author").toLowerCase().replace(/[^a-z0-9_]/g, ""),
+      role: isAdmin ? "admin" : "user",
+      goldTick: isAdmin,
+      blueTick: false,
+      blueTickExpiry: null,
+      phone: "",
+      phoneVerified: false,
+      emailVerified: false,
+      library: [], published: [], earnings: [],
+      following: [], followers: [], bio: "",
+      onboardingCompleted: false,
+      onboarding: null,
+      coins: 100,
+      totalReadingSeconds: 0,
+      createdAt: serverTimestamp()
+    });
+    // Auto-follow founders for brand new users
+    try {
+      const adminSnap = await getDocs(query(collection(db, "users"), where("email", "in", ADMIN_EMAILS)));
+      const adminIds = adminSnap.docs.map(a => a.id).filter(id => id !== uid);
+      if (adminIds.length) {
+        await updateDoc(ref, { following: arrayUnion(...adminIds) });
+        for (const aDoc of adminSnap.docs) {
+          if (aDoc.id !== uid) await updateDoc(aDoc.ref, { followers: arrayUnion(uid) }).catch(() => {});
+        }
+      }
+    } catch (e) {}
+  } else if (isAdmin) {
+    // upgrade existing profile to gold/admin if it predates this change
+    const data = snap.data();
+    if (data.role !== "admin" || !data.goldTick) {
+      await updateDoc(ref, { role: "admin", goldTick: true });
+    }
+  } else {
+    // Ensure new normal users auto-follow the two founders if not already
+    try {
+      const d = snap.data() || (await getDoc(ref)).data();
+      if (d && (!d.following || d.following.length === 0)) {
+        const adminSnap = await getDocs(query(collection(db, "users"), where("email", "in", ADMIN_EMAILS)));
+        const adminIds = adminSnap.docs.map(a => a.id).filter(id => id !== uid);
+        if (adminIds.length) {
+          await updateDoc(ref, { following: arrayUnion(...adminIds) });
+          for (const aDoc of adminSnap.docs) {
+            if (aDoc.id === uid) continue;
+            await updateDoc(aDoc.ref, { followers: arrayUnion(uid) }).catch(() => {});
+          }
+        }
+      }
+    } catch (e) {}
+  }
+  return (await getDoc(ref)).data();
+}
+
+export async function getUserProfile(uid) {
+  const snap = await getDoc(doc(db, "users", uid));
+  return snap.exists() ? snap.data() : null;
+}
+
+export async function updateProfile(uid, { displayName, username, photoURL } = {}) {
+  const fields = {};
+  if (displayName) fields.displayName = displayName;
+  if (photoURL) fields.photoURL = photoURL;
+  if (username) {
+    const u = username.toLowerCase().replace(/[^a-z0-9_]/g, "");
+    if (!u) throw new Error("Username can only use letters, numbers and _");
+    const snap = await getDocs(query(collection(db, "users"), where("username", "==", u), limit(1)));
+    if (snap.docs.some((d) => d.id !== uid)) throw new Error("@" + u + " is already taken — pick another");
+    fields.username = u; fields.handle = "@" + u;
+  }
+  await updateDoc(doc(db, "users", uid), fields);
+}
+
+export async function listUsers() {
+  const snap = await getDocs(query(collection(db, "users"), limit(100)));
+  return snap.docs.map(d => ({ uid: d.id, ...d.data() }));
+}
+
+export async function setUserRole(uid, role) {
+  await updateDoc(doc(db, "users", uid), { role, goldTick: role === "admin" });
+}
+
+export async function getPostsByUser(uid) {
+  const snap = await getDocs(query(collection(db, "posts"), where("uid", "==", uid)));
+  const posts = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  posts.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+  return posts;
+}
+
+export async function toggleFollow(myUid, targetUid) {
+  const me = doc(db, "users", myUid);
+  const them = doc(db, "users", targetUid);
+  const m = await getDoc(me); const t = await getDoc(them);
+  const targetEmail = t.data()?.email || "";
+  const isProtected = ADMIN_EMAILS.includes(targetEmail);
+  const myFollowing = m.data()?.following || [];
+  if (myFollowing.includes(targetUid)) {
+    if (isProtected) throw new Error("You cannot unfollow this account");
+    await updateDoc(me, { following: arrayRemove(targetUid) });
+    await updateDoc(them, { followers: arrayRemove(myUid) });
+  } else {
+    await updateDoc(me, { following: arrayUnion(targetUid) });
+    await updateDoc(them, { followers: arrayUnion(myUid) });
+  }
+}
+
+export async function deleteUserAndPosts(uid) {
+  const snap = await getDocs(query(collection(db, "posts"), where("uid", "==", uid)));
+  await Promise.all(snap.docs.map((d) => deleteDoc(d.ref)));
+  await deleteDoc(doc(db, "users", uid));
+}
+export async function setUserBlue(uid, value) {
+  await updateDoc(doc(db, "users", uid), {
+    blueTick: value,
+    blueTickExpiry: value ? Date.now() + YEAR_MS : null
+  });
+}
+
+/* ---------- Blue-tick verification (₹19/year) ---------- */
+export async function purchaseBlueTick(uid, amount = BLUE_TICK_YEARLY_INR) {
+  // Payment is handled by your gateway; this records the real verified state.
+  await updateDoc(doc(db, "users", uid), {
+    blueTick: true,
+    blueTickExpiry: Date.now() + YEAR_MS,
+    blueTickPurchases: increment(1),
+    blueTickAmount: amount
+  });
+}
+
+/* ---------- Phone verification (SMS OTP via Firebase) ---------- */
+export async function setPhoneVerified(uid, phone) {
+  await updateDoc(doc(db, "users", uid), { phoneVerified: true, phone: phone || "" });
+}
+
+/* ---------- Email verification via MailboxLayer (backend-validated) ---------- */
+export async function setEmailVerified(uid, value = true) {
+  await updateDoc(doc(db, "users", uid), { emailVerified: value });
+}
+
+/* ---------- Books / Writer / Reader ---------- */
+export async function createBook({ uid, ownerName, title }) {
+  const ref = await addDoc(collection(db, "books"), {
+    ownerId: uid, ownerName: ownerName || "", title: title || "Untitled",
+    blurb: "", genre: "General", price: 0, status: "draft",
+    cover: null, reads: 0, rating: 0, ratingCount: 0, createdAt: serverTimestamp()
+  });
+  return ref.id;
+}
+
+export async function updateBook(bookId, fields) {
+  await updateDoc(doc(db, "books", bookId), fields);
+}
+
+export async function publishBookNow(bookId) {
+  await updateDoc(doc(db, "books", bookId), { status: "published" });
+}
+
+export async function deleteBookCompletely(bookId) {
+  const chs = await getDocs(collection(db, "books", bookId, "chapters"));
+  await Promise.all(chs.docs.map((d) => deleteDoc(d.ref)));
+  await deleteDoc(doc(db, "books", bookId));
+}
+
+export async function getBookById(bookId) {
+  const s = await getDoc(doc(db, "books", bookId));
+  return s.exists() ? { id: s.id, ...s.data() } : null;
+}
+
+export async function getMyBooks(uid) {
+  const snap = await getDocs(query(collection(db, "books"), where("ownerId", "==", uid)));
+  const arr = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  arr.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+  return arr;
+}
+
+export async function getPublishedByOwner(uid) {
+  const arr = await getMyBooks(uid);
+  return arr.filter((b) => b.status === "published");
+}
+
+/* chapters */
+export async function addChapter(bookId, title, order) {
+  const ref = await addDoc(collection(db, "books", bookId, "chapters"),
+    { title: title || "Untitled Chapter", content: "", words: 0, order });
+  return ref.id;
+}
+export async function saveChapter(bookId, chId, fields) {
+  await updateDoc(doc(db, "books", bookId, "chapters", chId), fields);
+}
+export async function deleteChapter(bookId, chId) {
+  await deleteDoc(doc(db, "books", bookId, "chapters", chId));
+}
+export async function getChapters(bookId) {
+  const snap = await getDocs(collection(db, "books", bookId, "chapters"));
+  const arr = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  arr.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  return arr;
+}
+
+/* Reading shelf — free users: max 3 books; gold/blue/admin: unlimited */
+export async function openShelfSlot(uid, bookId, profile) {
+  const ref = doc(db, "users", uid, "shelf", bookId);
+  const snap = await getDoc(ref);
+  if (snap.exists()) return { ok: true, existed: true, data: snap.data() };
+  const unlimited = !!(profile?.goldTick || profile?.blueTick || profile?.role === "admin");
+  if (!unlimited) {
+    const all = await getDocs(collection(db, "users", uid, "shelf"));
+    if (all.size >= 3) return { ok: false, limit: 3 };
+  }
+  await setDoc(ref, { addedAt: Date.now(), lastChapter: 0, lastScroll: 0 });
+  await updateDoc(doc(db, "books", bookId), { reads: increment(1) }).catch(() => {});
+  return { ok: true, existed: false, data: { addedAt: Date.now(), lastChapter: 0, lastScroll: 0 } };
+}
+
+export async function getShelf(uid) {
+  const snap = await getDocs(collection(db, "users", uid, "shelf"));
+  return snap.docs.map((d) => ({ bookId: d.id, ...d.data() }));
+}
+
+export async function saveReadingProgress(uid, bookId, lastChapter, lastScroll) {
+  await setDoc(doc(db, "users", uid, "shelf", bookId),
+    { lastChapter, lastScroll }, { merge: true });
+}
+
+export async function saveOnboarding(uid, data) {
+  await updateDoc(doc(db, "users", uid), {
+    onboarding: data,
+    onboardingCompleted: true,
+    coins: increment(0)
+  });
+  // ensure coins field exists for old users
+  const snap = await getDoc(doc(db, "users", uid));
+  if (snap.exists() && snap.data().coins == null) {
+    await updateDoc(doc(db, "users", uid), { coins: 100 });
+  }
+}
+
+export async function getUserCoins(uid) {
+  const snap = await getDoc(doc(db, "users", uid));
+  return snap.exists() ? (snap.data().coins ?? 0) : 0;
+}
+
+export async function spendCoins(uid, amount) {
+  const ref = doc(db, "users", uid);
+  const snap = await getDoc(ref);
+  const coins = snap.data()?.coins ?? 0;
+  if (coins < amount) throw new Error("Not enough coins");
+  await updateDoc(ref, { coins: increment(-amount) });
+  return coins - amount;
+}
+
+export async function addCoins(uid, amount) {
+  await updateDoc(doc(db, "users", uid), { coins: increment(amount) });
+}
+
+export async function trackReadingTime(uid, seconds, authorId) {
+  if (!seconds || seconds < 5) return;
+  await updateDoc(doc(db, "users", uid), { totalReadingSeconds: increment(seconds) }).catch(() => {});
+  if (authorId && authorId !== uid) {
+    await updateDoc(doc(db, "users", authorId), { totalReadingSeconds: increment(0), earnings: increment(0) }).catch(() => {});
+  }
+}
+
+export async function isChapterUnlocked(uid, bookId, chapterIndex, profile) {
+  if (chapterIndex === 0) return true; // Ch1 always free
+  if (!uid) return false; // Ch2+ need login
+  if (chapterIndex <= 2) return true; // Ch2-3 free after signup
+  // Check if already unlocked
+  const ref = doc(db, "users", uid, "unlockedChapters", `${bookId}_${chapterIndex}`);
+  const snap = await getDoc(ref);
+  if (snap.exists()) return true;
+  // Gold/blue/admin unlimited
+  if (profile?.goldTick || profile?.blueTick || profile?.role === "admin") return true;
+  return false;
+}
+
+export async function unlockChapter(uid, bookId, chapterIndex) {
+  await setDoc(doc(db, "users", uid, "unlockedChapters", `${bookId}_${chapterIndex}`), {
+    unlockedAt: serverTimestamp(), bookId, chapterIndex
+  });
+}
+
+/* ---------- Messaging to authors ---------- */
+export function conversationId(a, b) {
+  return [a, b].sort().join("_");
+}
+
+export async function sendMessage(fromUid, toUid, text, fromName, fromHandle) {
+  const cid = conversationId(fromUid, toUid);
+  const convoRef = doc(db, "conversations", cid);
+  const snap = await getDoc(convoRef);
+  if (!snap.exists()) {
+    await setDoc(convoRef, {
+      participants: [fromUid, toUid].sort(),
+      lastMessage: text.slice(0, 80),
+      lastAt: serverTimestamp(),
+      createdAt: serverTimestamp()
+    });
+  } else {
+    await updateDoc(convoRef, { lastMessage: text.slice(0, 80), lastAt: serverTimestamp() });
+  }
+  await addDoc(collection(db, "conversations", cid, "messages"), {
+    from: fromUid, to: toUid, text, fromName: fromName || "", fromHandle: fromHandle || "",
+    createdAt: serverTimestamp()
+  });
+}
+
+export function subscribeInbox(uid, cb) {
+  // avoid composite index requirement: query without orderBy, sort client-side
+  const q = query(collection(db, "conversations"), where("participants", "array-contains", uid));
+  return onSnapshot(q, (snap) => {
+    const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    list.sort((a,b) => {
+      const at = a.lastAt?.seconds ? a.lastAt.seconds*1000 : (a.lastAt || 0);
+      const bt = b.lastAt?.seconds ? b.lastAt.seconds*1000 : (b.lastAt || 0);
+      return bt - at;
+    });
+    cb(list);
+  }, (e) => {
+    console.warn("inbox subscribe error", e.code, e.message);
+    cb([]);
+  });
+}
+
+export function subscribeMessages(cid, cb) {
+  const q = query(collection(db, "conversations", cid, "messages"), orderBy("createdAt", "asc"));
+  return onSnapshot(q, (snap) => cb(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+}
+
+export async function getConversationOtherUser(cid, myUid) {
+  const snap = await getDoc(doc(db, "conversations", cid));
+  if (!snap.exists()) return null;
+  const parts = snap.data().participants || [];
+  const otherId = parts.find(p => p !== myUid);
+  if (!otherId) return null;
+  return getUserProfile(otherId);
+}
+
+/* ---------- AI Studio drafts ---------- */
+export async function saveDraft({ uid, title, outline, manuscript, meta }) {
+  return addDoc(collection(db, "users", uid, "drafts"), {
+    title, outline, manuscript, meta, createdAt: serverTimestamp()
+  });
+}
+export async function getDrafts(uid) {
+  const snap = await getDocs(query(collection(db, "users", uid, "drafts"), orderBy("createdAt", "desc")));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+/* ---------- Real Comments (text + replies) ---------- */
+export async function addComment(postId, uid, author, text, handle, avatar, parentId = null) {
+  const ref = await addDoc(collection(db, "posts", postId, "comments"), {
+    uid, author, text, handle: handle || "", avatar: avatar || "", parentId: parentId || null,
+    createdAt: serverTimestamp(), likes: 0, likedBy: []
+  });
+  await updateDoc(doc(db, "posts", postId), { comments: increment(1) });
+  return ref.id;
+}
+export async function getComments(postId) {
+  const snap = await getDocs(query(collection(db, "posts", postId, "comments"), orderBy("createdAt", "asc")));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+export async function toggleCommentLike(postId, commentId, uid) {
+  const ref = doc(db, "posts", postId, "comments", commentId);
+  const snap = await getDoc(ref);
+  const likedBy = snap.data()?.likedBy || [];
+  if (likedBy.includes(uid)) await updateDoc(ref, { likedBy: arrayRemove(uid), likes: increment(-1) });
+  else await updateDoc(ref, { likedBy: arrayUnion(uid), likes: increment(1) });
+}
+export async function deleteComment(postId, commentId, uid) {
+  const ref = doc(db, "posts", postId, "comments", commentId);
+  await deleteDoc(ref);
+  await updateDoc(doc(db, "posts", postId), { comments: increment(-1) });
+}
+
+/* ---------- Notifications ---------- */
+export function subscribeNotifications(uid, cb) {
+  const q = query(collection(db, "users", uid, "notifications"), orderBy("createdAt", "desc"), limit(50));
+  return onSnapshot(q, (snap) => cb(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+}
+export async function addNotification(toUid, { type, fromUid, fromName, fromHandle, fromAvatar, postId, storyId, text, link }) {
+  if (toUid === fromUid) return; // self notification nahi
+  await addDoc(collection(db, "users", toUid, "notifications"), {
+    type, fromUid, fromName: fromName || "", fromHandle: fromHandle || "", fromAvatar: fromAvatar || "",
+    postId: postId || null, storyId: storyId || null, text: text || "", link: link || null,
+    read: false, createdAt: serverTimestamp()
+  });
+}
+export async function markNotificationRead(uid, notifId) {
+  await updateDoc(doc(db, "users", uid, "notifications", notifId), { read: true });
+}
+export async function markAllNotificationsRead(uid) {
+  const snap = await getDocs(query(collection(db, "users", uid, "notifications"), where("read", "==", false)));
+  await Promise.all(snap.docs.map(d => updateDoc(d.ref, { read: true })));
+}
+export async function getUnreadCount(uid) {
+  const snap = await getDocs(query(collection(db, "users", uid, "notifications"), where("read", "==", false)));
+  return snap.size;
+}
+
+/* ---------- Book Purchase (Razorpay) ---------- */
+export async function purchaseBook(uid, bookId, amountInr) {
+  const book = await getBookById(bookId);
+  if (!book) throw new Error("Book not found");
+  const order = await apiPostLocal("/api/create-order", { amount: amountInr * 100, receipt: "book_" + bookId + "_" + Date.now() });
+  if (!order || order.error || !order.order_id) throw new Error(order?.error || "Order failed");
+  return { order, book };
+}
+export async function verifyBookPurchase(orderId, paymentId, signature, uid, bookId) {
+  const v = await apiPostLocal("/api/verify-payment", { razorpay_order_id: orderId, razorpay_payment_id: paymentId, razorpay_signature: signature });
+  if (!v || !v.verified) throw new Error("Payment verification failed");
+  // Add to library / mark purchased
+  const book = await getBookById(bookId);
+  await setDoc(doc(db, "users", uid, "library", bookId), {
+    bookId, purchasedAt: serverTimestamp(), pricePaid: book.price, status: "purchased"
+  }).catch(() => {});
+  await updateDoc(doc(db, "books", bookId), { sales: increment(1) }).catch(() => {});
+  // Notify author
+  if (book.ownerId && book.ownerId !== uid) {
+    await addNotification(book.ownerId, {
+      type: "sale", fromUid: uid, fromName: "A reader", text: "Someone purchased your book \"" + (book.title || "") + "\"", link: `/book/${bookId}`
+    });
+  }
+  return true;
+}
+export async function isBookPurchased(uid, bookId) {
+  const snap = await getDoc(doc(db, "users", uid, "library", bookId));
+  return snap.exists();
+}
+
+/* ---------- Reading Streaks & Daily Coins ---------- */
+export async function getStreak(uid) {
+  const snap = await getDoc(doc(db, "users", uid, "streak", "today"));
+  return snap.exists() ? snap.data() : { count: 0, lastRead: null };
+}
+export async function updateStreak(uid, secondsRead) {
+  if (!secondsRead || secondsRead < 30) return;
+  const now = new Date();
+  const todayKey = now.toISOString().slice(0, 10);
+  const ref = doc(db, "users", uid, "streak", "today");
+  const snap = await getDoc(ref);
+  let data = { count: 0, lastRead: todayKey, totalSeconds: 0, streak: 0 };
+  if (snap.exists()) data = snap.data();
+  const last = data.lastRead || "";
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  let streak = data.streak || 0;
+  if (last === todayKey) { /* already counted today */ }
+  else if (last === yesterday) streak += 1;
+  else streak = 1;
+  data.count = (data.count || 0) + 1;
+  data.lastRead = todayKey;
+  data.totalSeconds = (data.totalSeconds || 0) + secondsRead;
+  data.streak = streak;
+  await setDoc(ref, data, { merge: true });
+  // Daily coin reward (once per day)
+  const coinKey = "coins_" + todayKey;
+  const coinSnap = await getDoc(doc(db, "users", uid, "streak", coinKey));
+  if (!coinSnap.exists()) {
+    const reward = 10 + Math.min(streak, 30); // 10-40 coins based on streak
+    await addCoins(uid, reward);
+    await setDoc(doc(db, "users", uid, "streak", coinKey), { claimed: true, reward, at: serverTimestamp() });
+    return { streak, reward };
+  }
+  return { streak, reward: 0 };
+}
+export async function claimDailyCoins(uid) {
+  const now = new Date();
+  const todayKey = now.toISOString().slice(0, 10);
+  const ref = doc(db, "users", uid, "streak", "today");
+  const snap = await getDoc(ref);
+  if (!snap.exists()) return { claimed: false, coins: 0, message: "Read something today first!" };
+  const data = snap.data();
+  const coinKey = "coins_" + todayKey;
+  const coinSnap = await getDoc(doc(db, "users", uid, "streak", coinKey));
+  if (coinSnap.exists()) return { claimed: false, coins: 0, message: "Already claimed today!" };
+  const streak = data.streak || 1;
+  const reward = 10 + Math.min(streak, 30);
+  await addCoins(uid, reward);
+  await setDoc(doc(db, "users", uid, "streak", coinKey), { claimed: true, reward, at: serverTimestamp() });
+  return { claimed: true, coins: reward, streak };
+}
+
+/* ---------- Helper: local API fallback ---------- */
+async function apiPostLocal(path, payload) {
+  try {
+    const r = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+    return await r.json();
+  } catch (_) { return null; }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "Ottle — Publish. Read. Connect.",
+  "short_name": "Ottle",
+  "description": "eBook publishing, marketplace, social feed, and AI Studio for independent storytellers.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fff9fb",
+  "theme_color": "#f0f5f0",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "icons": [
+    { "src": "./logo.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "./logo.png", "sizes": "512x512", "type": "image/png" }
+  ],
+  "categories": ["books", "news", "social"],
+  "lang": "en-IN"
+}

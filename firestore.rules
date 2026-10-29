@@ -1,0 +1,87 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+    function isAdmin() {
+      return signedIn() &&
+        (request.auth.token.email == 'raptorayush8@gmail.com' ||
+         request.auth.token.email == 'r4908994@gmail.com');
+    }
+    function isMine(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    match /users/{uid} {
+      allow read: if signedIn();
+      allow create: if isMine(uid);
+      allow update: if isAdmin()
+        || (isMine(uid))
+        || request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['followers', 'following']);
+      allow delete: if isAdmin();
+
+      match /drafts/{id} {
+        allow read, write: if isMine(uid);
+      }
+
+      match /shelf/{bookId} {
+        allow read, write: if isMine(uid);
+      }
+
+      match /unlockedChapters/{id} {
+        allow read, write: if isMine(uid);
+      }
+    }
+
+    match /conversations/{cid} {
+      allow create, read, update: if signedIn();
+    }
+
+    match /conversations/{cid}/messages/{mid} {
+      allow read, create: if signedIn();
+    }
+
+    // Serverless OTP store: sirf HASH save hota hai (plaintext code kabhi DB me nahi),
+    // isliye public read safe hai — hash se code reverse nahi hota.
+    match /otps/{hash} {
+      allow create, read, delete: if true;
+    }
+    match /otpMeta/{id} {
+      allow create, read, update: if true;
+    }
+
+    match /posts/{id} {
+      allow read: if true;
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid;
+      // allow likes/comments/shares by anyone signed in, content edit only by owner
+      allow update: if isAdmin()
+        || resource.data.uid == request.auth.uid
+        || (signedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes','likedBy','comments','shares']));
+      allow delete: if resource.data.uid == request.auth.uid || isAdmin();
+    }
+
+    match /stories/{storyId} {
+      allow read: if true;
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid;
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid || isAdmin();
+    }
+
+    match /books/{bookId} {
+      allow read: if true;
+      allow create: if signedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow update: if isAdmin()
+        || (signedIn() && resource.data.ownerId == request.auth.uid);
+      allow delete: if isAdmin()
+        || (signedIn() && resource.data.ownerId == request.auth.uid);
+
+      match /chapters/{chId} {
+        allow read: if true;
+        allow write: if signedIn() &&
+          get(/databases/$(database)/documents/books/$(bookId)).data.ownerId == request.auth.uid;
+      }
+    }
+  }
+}

@@ -1,0 +1,197 @@
+/* public/css/styles.css — Very Light Pink + Crisp White + Sage Green Premium + Mobile First */
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+body { font-family: 'Inter', sans-serif; background: #fff9fb; overscroll-behavior-y: contain; -webkit-tap-highlight-color: transparent; }
+* { -webkit-tap-highlight-color: rgba(122,158,126,0.15); }
+
+::selection { background: rgba(122,158,126,0.22); }
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(122,158,126,0.28); border-radius: 10px; }
+.dark ::-webkit-scrollbar-thumb { background: rgba(122,158,126,0.35); }
+
+.theme-transition, .theme-transition * { transition: background-color .4s ease, border-color .4s ease, color .3s ease; }
+
+/* ---------- Every button gets a little life — 44px min touch target on mobile ---------- */
+button, a { min-height: auto; }
+@media (max-width: 768px) {
+  button, [role="button"], a.btn { min-height: 44px; }
+  input, textarea, select { font-size: 16px !important; } /* prevent iOS zoom */
+}
+button { transition: transform .15s ease, box-shadow .2s ease, background-color .25s ease, color .2s ease; touch-action: manipulation; }
+button:active { transform: scale(.97); }
+.btn-lift:hover { transform: translateY(-2px); }
+@media (hover: none) { .btn-lift:hover { transform: none; } }
+
+/* shine sweep on primary CTAs */
+.btn-shine { position: relative; overflow: hidden; }
+.btn-shine::after {
+  content: ""; position: absolute; top: 0; left: -120%; width: 60%; height: 100%;
+  background: linear-gradient(110deg, transparent, rgba(255,255,255,.35), transparent);
+  transform: skewX(-20deg); transition: left .6s ease;
+}
+.btn-shine:hover::after { left: 140%; }
+
+/* ---------- CSS-generated logo — now crisp white + sage premium ---------- */
+.ottle-logo { display: inline-flex; align-items: center; gap: .55rem; }
+.ottle-mark {
+  position: relative; width: 2rem; height: 2rem; border-radius: .6rem; flex: none;
+  background: linear-gradient(135deg, #ffffff, #f4f7f4);
+  box-shadow: 0 4px 16px rgba(122,158,126,.18), 0 1px 3px rgba(0,0,0,.06);
+  border: 1px solid rgba(122,158,126,0.12);
+  display: flex; align-items: center; justify-content: center;
+}
+.dark .ottle-mark { background: linear-gradient(135deg, #7a9e7e, #5a8a5a); box-shadow: 0 6px 18px rgba(122,158,126,.25); }
+.ottle-mark::before { content: ""; width: 1rem; height: 1rem; border-radius: 50%; border: .22rem solid #7a9e7e; }
+.ottle-mark::after { content: ""; position: absolute; width: .36rem; height: .36rem; border-radius: 50%; background: #7a9e7e; }
+.ottle-word {
+  font-size: 1.35rem; font-weight: 800; letter-spacing: -.02em; line-height: 1;
+  background: linear-gradient(135deg, #2e3d2e, #7a9e7e); -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.dark .ottle-word { background: linear-gradient(135deg, #ffffff, #a8c5a8); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.ottle-logo-sm .ottle-mark { width: 1.6rem; height: 1.6rem; }
+.ottle-logo-sm .ottle-mark::before { width: .8rem; height: .8rem; border-width: .18rem; }
+.ottle-logo-sm .ottle-word { font-size: 1.1rem; }
+.ottle-logo-lg .ottle-mark { width: 3rem; height: 3rem; border-radius: .9rem; }
+.ottle-logo-lg .ottle-mark::before { width: 1.5rem; height: 1.5rem; border-width: .3rem; }
+.ottle-logo-lg .ottle-word { font-size: 2rem; }
+
+/* ---------- Scroll reveal ---------- */
+.reveal { opacity: 0; transform: translateY(28px); transition: opacity .7s cubic-bezier(.2,.7,.2,1), transform .7s cubic-bezier(.2,.7,.2,1); }
+.reveal.reveal-left { transform: translateX(-32px); }
+.reveal.reveal-scale { transform: scale(.94); }
+.reveal.in { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; } }
+
+@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-16px); } }
+.float { animation: float 6s ease-in-out infinite; }
+.float-slow { animation: float 9s ease-in-out infinite; }
+
+.mention { color: #5a8a5a; font-weight: 600; }
+.dark .mention { color: #a8c5a8; }
+.hashtag { color: #7a9e7e; font-weight: 600; }
+.dark .hashtag { color: #c8dcc8; }
+
+.nav-link { position: relative; }
+.nav-link::after { content:''; position:absolute; bottom:-4px; left:0; width:0; height:2px; background:#7a9e7e; transition:width .3s ease; }
+.nav-link:hover::after, .nav-link.active::after { width:100%; }
+
+.card-hover { transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease; }
+.card-hover:hover { transform: translateY(-3px); box-shadow: 0 12px 32px -12px rgba(122,158,126,.25); }
+@media (max-width: 768px) { .card-hover:hover { transform: none; box-shadow: none; } .card-hover:active { transform: scale(0.99); } }
+
+.modal-backdrop { background: rgba(46,61,46,0.45); backdrop-filter: blur(12px) saturate(1.2); }
+/* Premium glass cards */
+.premium-card { background: rgba(255,255,255,0.92); backdrop-filter: blur(16px); border: 1px solid rgba(122,158,126,0.08); box-shadow: 0 8px 32px -8px rgba(122,158,126,0.12), 0 1px 3px rgba(0,0,0,0.04); }
+.dark .premium-card { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.06); }
+
+/* ---------- Premium sage + very light pink hero ---------- */
+.pay-hero {
+  background: radial-gradient(120% 120% at 0% 0%, #a8c5a8 0%, #7a9e7e 45%, #2e3d2e 100%);
+}
+.dark .pay-hero { background: radial-gradient(120% 120% at 0% 0%, #6b8f71 0%, #2e3d2e 70%, #0f1a0f 100%); }
+.pay-card { box-shadow: 0 30px 60px -25px rgba(14,165,233,.45); }
+.pay-method { border: 1.5px solid rgba(156,98,64,.25); transition: all .2s ease; }
+.pay-method.sel { border-color: #0ea5e9; background: rgba(14,165,233,.08); box-shadow: 0 0 0 3px rgba(14,165,233,.15); }
+.dark .pay-method { border-color: rgba(92,121,181,.35); }
+.glow { box-shadow: 0 0 0 0 rgba(14,165,233,.5); animation: payGlow 2s infinite; }
+@keyframes payGlow { 0% { box-shadow: 0 0 0 0 rgba(14,165,233,.45); } 70% { box-shadow: 0 0 0 12px rgba(14,165,233,0); } 100% { box-shadow: 0 0 0 0 rgba(14,165,233,0); } }
+
+@media (max-width: 1024px) { .sidebar-mobile { display: none; } .feed-mobile-pad { padding-bottom: 84px; } }
+
+/* ---------- Skeleton loaders ---------- */
+@keyframes shimmer { 100% { background-position: -200% 0; } }
+.skeleton {
+  background: linear-gradient(90deg, rgba(156,98,64,.12) 25%, rgba(156,98,64,.24) 37%, rgba(156,98,64,.12) 63%);
+  background-size: 200% 100%; animation: shimmer 1.4s infinite linear; border-radius: .75rem;
+}
+.dark .skeleton { background: linear-gradient(90deg, rgba(92,121,181,.12) 25%, rgba(92,121,181,.24) 37%, rgba(92,121,181,.12) 63%); background-size: 200% 100%; }
+
+/* ---------- Mobile bottom nav ---------- */
+.bottom-nav {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 45; display: flex; justify-content: space-around; align-items: center;
+  padding: .45rem .2rem calc(.45rem + env(safe-area-inset-bottom)); background: rgba(253,252,249,.93); backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(156,98,64,.2);
+}
+.dark .bottom-nav { background: rgba(13,20,41,.93); border-top-color: rgba(92,121,181,.25); }
+.bottom-nav button {
+  display: flex; flex-direction: column; align-items: center; gap: .15rem; font-size: .6rem; font-weight: 600;
+  color: rgba(58,84,150,.6); padding: .25rem .55rem; border-radius: .75rem; transition: color .2s, transform .15s, background-color .2s;
+}
+.bottom-nav button.active { color: #7a9e7e; background: rgba(122,158,126,.12); }
+.bottom-nav button:active { transform: scale(.88); }
+.bottom-nav button i { width: 1.3rem; height: 1.3rem; }
+@media (min-width: 1024px) { .bottom-nav { display: none; } }
+
+/* ---------- Ottle Admin banner badge (gold-tick only) ---------- */
+.ottle-admin-badge {
+  position: absolute; right: 1rem; bottom: 1rem;
+  display: inline-flex; align-items: center; gap: .45rem;
+  padding: .5rem 1rem; border-radius: 999px;
+  font-weight: 800; font-size: .75rem; letter-spacing: .04em; text-transform: uppercase;
+  color: #3a2600; background: linear-gradient(135deg, #fbbf55, #f5a623 55%, #e08e0b);
+  box-shadow: 0 8px 24px rgba(245,166,35,.45), inset 0 1px 0 rgba(255,255,255,.4);
+  overflow: hidden; position: absolute;
+}
+.ottle-admin-badge::before {
+  content: ""; width: .6rem; height: .6rem; border-radius: 50%; flex: none;
+  background: radial-gradient(circle at 30% 30%, #fffdf5, #ffe9a8);
+  box-shadow: 0 0 8px rgba(255,255,255,.7);
+}
+.ottle-admin-badge::after {
+  content: ""; position: absolute; top: 0; left: -120%; width: 50%; height: 100%;
+  background: linear-gradient(110deg, transparent, rgba(255,255,255,.5), transparent);
+  transform: skewX(-20deg); animation: adminShine 2.8s infinite;
+}
+@keyframes adminShine { 0% { left: -120%; } 60%, 100% { left: 160%; } }
+.dark .ottle-admin-badge { color: #2b1d00; }
+
+/* ---------- OTP input boxes ---------- */
+.otp-box {
+  width: 3rem; height: 3.6rem; text-align: center; font-size: 1.35rem; font-weight: 700;
+  border-radius: .75rem; color: inherit;
+  background: rgba(243,235,217,.6); border: 2px solid transparent; outline: none;
+  transition: border-color .2s ease, transform .15s ease, background-color .3s ease;
+}
+.dark .otp-box { background: rgba(13,20,41,.4); }
+.otp-box:focus { border-color: #f5a623; transform: translateY(-2px); }
+@keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+.shake { animation: shake .3s ease; }
+
+/* ---------- Generated book covers ---------- */
+.cover-css {
+  position: relative; width: 100%; height: 100%; overflow: hidden;
+  display: flex; flex-direction: column; justify-content: space-between;
+  padding: 10% 9%; color: #fff;
+  background: linear-gradient(150deg, var(--c1), var(--c2));
+}
+.cover-css::before {
+  content: ""; position: absolute; inset: 0; opacity: var(--pat-op, .25); pointer-events: none;
+  background-image: var(--pat);
+}
+.cover-title { position: relative; font-family: Georgia, serif; font-weight: 800; line-height: 1.15; word-break: break-word;
+  font-size: clamp(.8rem, 2.2cqw, 1.6rem); text-shadow: 0 2px 8px rgba(0,0,0,.35); }
+.cover-author { position: relative; font-size: clamp(.55rem, 1.4cqw, .85rem); opacity: .92; letter-spacing: .06em; text-transform: uppercase; }
+.pat-dots { --pat: radial-gradient(rgba(255,255,255,.7) 12%, transparent 13%); background-size: 14px 14px; }
+.pat-rays { --pat: repeating-linear-gradient(45deg, rgba(255,255,255,.35) 0 3px, transparent 3px 16px); }
+.pat-waves { --pat: repeating-radial-gradient(circle at 120% -20%, rgba(255,255,255,.35) 0 6px, transparent 6px 22px); }
+.pat-grid { --pat: linear-gradient(rgba(255,255,255,.35) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.35) 1px, transparent 1px); background-size: 18px 18px, 18px 18px; }
+.cover-frame::after { content:""; position:absolute; inset:5%; border:1px solid rgba(255,255,255,.65); pointer-events:none; }
+
+/* Writer */
+.writer-area { min-height: 60vh; resize: none; }
+.writer-area:focus { outline: none; }
+.chap-item { cursor: pointer; transition: background-color .15s ease; }
+.chap-item.active { background: rgba(122,158,126,.12); border-left: 3px solid #7a9e7e; }
+
+/* ---------- Mobile First — PC se better mobile ---------- */
+@media (max-width: 640px) {
+  .max-w-7xl { padding-left: 1rem !important; padding-right: 1rem !important; }
+  h1 { line-height: 1.1; }
+  .premium-card { border-radius: 1.25rem; }
+  #storyStrip { gap: 0.75rem; padding-bottom: 0.5rem; }
+  .bottom-nav button { font-size: 0.58rem; padding: 0.35rem 0.5rem; }
+}
+/* Premium info wow */
+.premium-info { background: linear-gradient(135deg, #ffffff 0%, #fff9fb 100%); border: 1px solid rgba(122,158,126,0.09); box-shadow: 0 12px 32px -12px rgba(122,158,126,0.18), 0 4px 12px -4px rgba(0,0,0,0.04); }
+.premium-badge { background: linear-gradient(135deg, #7a9e7e, #5a8a5a); color: white; box-shadow: 0 4px 12px rgba(122,158,126,0.3); }
