@@ -385,6 +385,15 @@ function renderOnboarding(root, user, profile) {
 function boot() {
   applyTheme();
   const root = $("#root");
+
+  // Vanity URL: /username or /@username -> open that profile directly
+  const path = window.location.pathname.replace(/\/$/, "").slice(1);
+  if (path && !["home","marketplace","connect","stories","writer","studio","dashboard","inbox","login","signup","admin"].includes(path)) {
+    // Treat as username profile link
+    handleVanityProfile(path);
+    return;
+  }
+
   completeEmailLink().then((handled) => {
     if (handled) return; // link verify ho gaya, page khud reload hoga
     window.addEventListener("scroll", () => {
@@ -427,6 +436,23 @@ function boot() {
         <p class="text-sm font-medium tracking-widest text-navy-400 dark:text-cream-300 animate-pulse">OTTLE</p>
       </div>`;
   });
+}
+
+async function handleVanityProfile(input) {
+  const root = $("#root");
+  const username = input.replace(/^@/, "").toLowerCase();
+  root.innerHTML = `<div class="py-24 text-center text-navy-400"><div class="w-8 h-8 mx-auto rounded-full border-4 border-amber-500 border-t-transparent animate-spin"></div><p class="mt-4 text-sm">Loading profile…</p></div>`;
+  try {
+    const users = await store.listUsers();
+    const user = users.find(u => (u.username || "").toLowerCase() === username);
+    if (!user) {
+      root.innerHTML = `<div class="max-w-md mx-auto mt-20 text-center animate-scaleIn"><div class="bg-cream-50 dark:bg-navy-800 rounded-3xl p-8 border border-cream-300/50 dark:border-navy-700"><div class="w-16 h-16 mx-auto rounded-2xl bg-amber-500/15 flex items-center justify-center mb-4"><i data-lucide="user-x" class="w-8 h-8 text-amber-500"></i></div><h2 class="text-xl font-extrabold mb-2">Profile not found</h2><p class="text-sm text-navy-500 dark:text-cream-300 mb-6">No author with username "@${escapeHtml(username)}"</p><button onclick="navigate('marketplace')" class="px-5 py-2.5 rounded-full bg-amber-500 text-navy-900 text-sm font-semibold hover:scale-105 transition">Browse Marketplace</button></div></div>`;
+      refreshIcons(); return;
+    }
+    openUserProfile(user.uid);
+  } catch (e) {
+    root.innerHTML = `<p class="text-center py-24 text-navy-400">Could not load profile.</p>`;
+  }
 }
 
 window.openAuth = (mode = "login") => {
