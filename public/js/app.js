@@ -887,6 +887,7 @@ window.openConversation = async (cid) => {
 };
 
 window.openDM = async (targetUid) => {
+  if (!state.user) { openAuth("login"); return; }
   if (targetUid === state.user.uid) return toast("That's you!");
   const cid = store.conversationId(state.user.uid, targetUid);
   navigate("inbox");
@@ -1325,7 +1326,7 @@ function renderFeed() {
 }
 
 function postCard(p, i = 0) {
-  const liked = p.likedBy?.includes(state.user.uid);
+  const liked = state.user ? p.likedBy?.includes(state.user.uid) : false;
   return `
   <article class="bg-cream-50 dark:bg-navy-800 rounded-2xl p-5 border border-cream-300/50 dark:border-navy-700 card-hover animate-fadeIn" style="animation-delay:${i * 55}ms">
     <div class="flex items-start gap-3">
@@ -1369,6 +1370,7 @@ function postCard(p, i = 0) {
 }
 
 window.likePost = async (id, authorUid) => {
+  if (!state.user) { openAuth("login"); return; }
   await store.toggleLike(id, state.user.uid).catch(() => toast("Could not like post"));
   if (authorUid && authorUid !== state.user.uid) {
     const p = state.profile;
@@ -1703,9 +1705,9 @@ window.openUserProfile = async (uid) => {
   catch (e) { app.innerHTML = `<p class="text-center py-24 text-navy-400">Could not load profile.</p>`; return; }
   if (!u) { app.innerHTML = `<p class="text-center py-24 text-navy-400">User not found.</p>`; return; }
 
-  const me = state.user.uid;
-  const isMe = me === uid;
-  const following = (u.followers || []).includes(me);
+  const me = state.user ? state.user.uid : null;
+  const isMe = me ? me === uid : false;
+  const following = me ? (u.followers || []).includes(me) : false;
   const initial = (u.displayName || "A")[0]?.toUpperCase();
   const avatar = u.photoURL
     ? `<img src="${u.photoURL}" class="w-24 h-24 rounded-full ring-4 ring-cream-50 dark:ring-navy-800 object-cover relative z-10 -mt-12" alt="">`
@@ -1724,6 +1726,8 @@ window.openUserProfile = async (uid) => {
         <div class="mb-2 flex gap-2">
           ${isMe
             ? `<button onclick="openEditProfile()" class="px-4 py-2 rounded-full bg-cream-200 dark:bg-navy-700 font-medium hover:bg-cream-300 dark:hover:bg-navy-600 transition text-sm">Edit profile</button>`
+            : !me
+            ? `<button onclick="openAuth('login')" class="px-4 py-2 rounded-full bg-cream-200 dark:bg-navy-700 text-sm font-medium hover:bg-cream-300 dark:hover:bg-navy-600 transition flex items-center gap-1.5"><i data-lucide="log-in" class="w-4 h-4"></i> Log in</button>`
             : `<button onclick="openDM('${uid}')" class="px-4 py-2 rounded-full bg-white border border-cream-300 dark:border-navy-600 dark:bg-navy-800 text-sm font-medium hover:bg-cream-100 dark:hover:bg-navy-700 transition flex items-center gap-1.5"><i data-lucide="mail" class="w-4 h-4"></i> Message</button>
                <button id="followBtn" class="px-5 py-2 rounded-full font-semibold text-sm transition ${following ? "bg-cream-200 dark:bg-navy-700 hover:bg-cream-300 dark:hover:bg-navy-600" : "bg-navy-800 dark:bg-amber-500 dark:text-navy-900 text-cream-100 hover:scale-105"}">${following ? "Following" : "Follow"}</button>`}
         </div>
@@ -1755,6 +1759,7 @@ window.openUserProfile = async (uid) => {
   </div>`;
   refreshIcons();
   $("#followBtn")?.addEventListener("click", async () => {
+    if (!me) { openAuth("login"); return; }
     await store.toggleFollow(me, uid);
     const p = state.profile;
     await store.addNotification(uid, {
