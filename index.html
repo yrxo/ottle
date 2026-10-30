@@ -3,127 +3,441 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ottle. — Publish. Read. Connect.</title>
+  <meta name="theme-color" content="#080D10" />
 
-  <!-- ===== Primary SEO ===== -->
-  <!-- TODO: Deploy ke baad har "https://otle.2bd.net" ko apne live domain se replace kar dena -->
-  <title>Ottle — Publish. Read. Connect. | eBook Publishing & Social Platform for Writers</title>
-  <meta name="description" content="Ottle is the modern home for independent storytellers — publish eBooks free, sell in the marketplace, grow readers on a social feed, and write books chapter-by-chapter with cover designer & AI Studio." />
-  <meta name="keywords" content="eBook publishing, self publishing platform, indie authors, write a book online, free ebook marketplace, book writing software, publish ebook free, storytelling community, reader social network, Ottle" />
-  <meta name="author" content="Ottle" />
-  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
-  <meta name="googlebot" content="index, follow" />
-  <meta name="google-site-verification" content="_aVhZ6pCHKsVDdvJL-XUaKZA9io-JquAQ5ksXcUVVbU" />
-  <meta name="theme-color" content="#f0f5f0" />
-  <meta name="rating" content="general" />
-  <meta name="application-name" content="Ottle" />
-  <link rel="canonical" href="https://otle.2bd.net/" />
-
-  <!-- ===== Open Graph (Facebook/WhatsApp/LinkedIn share preview) ===== -->
-  <meta property="og:type" content="website" />
-  <meta property="og:site_name" content="Ottle" />
-  <meta property="og:title" content="Ottle — Publish. Read. Connect." />
-  <meta property="og:description" content="Publish your eBook free, build a reader following, and write with chapter tools + covers — the all-in-one home for independent storytellers." />
-  <meta property="og:url" content="https://otle.2bd.net/" />
-  <meta property="og:image" content="https://otle.2bd.net/logo.jpg" />
-  <meta property="og:image:width" content="1200" />
-  <meta property="og:image:height" content="630" />
-  <meta property="og:locale" content="en_US" />
-
-  <!-- ===== Twitter Card ===== -->
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Ottle — Publish. Read. Connect." />
-  <meta name="twitter:description" content="The modern home for independent storytellers. Free eBook publishing, marketplace, and a social feed for writers." />
-  <meta name="twitter:image" content="https://otle.2bd.net/logo.jpg" />
-
-  <!-- ===== Icons ===== -->
-  <link rel="icon" type="image/png" href="./logo.png" />
-  <link rel="apple-touch-icon" href="./logo.png" />
-
-  <!-- ===== Structured Data (Google rich results) ===== -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    "name": "Ottle",
-    "alternateName": "Ottle — eBook Publishing & Social Platform",
-    "url": "https://otle.2bd.net/",
-    "description": "Publish eBooks free, sell in the marketplace, grow readers socially.",
-    "potentialAction": {
-      "@type": "SearchAction",
-      "target": "https://otle.2bd.net/?q={search_term_string}",
-      "query-input": "required name=search_term_string"
-    }
-  }
-  </script>
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    "name": "Ottle",
-    "url": "https://otle.2bd.net/",
-    "logo": "https://otle.2bd.net/logo.jpg",
-    "sameAs": []
-  }
-  </script>
-
-  <!-- ===== Fonts & libs ===== -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet" />
-
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./public/css/styles.css?v=4" />
   <script src="https://unpkg.com/lucide@latest"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-            display: ['Outfit', 'Inter', 'ui-sans-serif', 'sans-serif'],
-            serif: ['Georgia', 'ui-serif', 'serif']
-          },
-          colors: {
-            navy: { 50:'#f6f8f6',100:'#e8ece8',200:'#d1dcd1',300:'#a8c0a8',400:'#8aa68a',500:'#6b8f71',600:'#4a7a52',700:'#3d5a42',800:'#2e3d2e',900:'#1a2a1e',950:'#0f1f12' },
-            cream: { 50:'#ffffff',100:'#fff9fb',200:'#fff0f4',300:'#ffe4ec',400:'#fecdd3',500:'#fda4af',600:'#f43f5e',700:'#e11d48',800:'#be123c',900:'#881337' },
-            amber: { 400:'#a8c5a8',500:'#7a9e7e',600:'#5a8a5a' },
-            coral: { 400:'#a8c5a8',500:'#7a9e7e',600:'#5a8a5a' },
-            sage: { 50:'#f4f7f4',100:'#e8efe8',200:'#d4e4d4',300:'#b8d0b8',400:'#a3bda3',500:'#8aa68a',600:'#7a9e7e',700:'#5c8a5c',800:'#46664a',900:'#2e4430' }
-          },
-          keyframes: {
-            fadeIn:{'0%':{opacity:0,transform:'translateY(8px)'},'100%':{opacity:1,transform:'translateY(0)'}},
-            slideUp:{'0%':{opacity:0,transform:'translateY(20px)'},'100%':{opacity:1,transform:'translateY(0)'}},
-            scaleIn:{'0%':{opacity:0,transform:'scale(0.96)'},'100%':{opacity:1,transform:'scale(1)'}},
-            pulseRing:{'0%':{boxShadow:'0 0 0 0 rgba(236,72,153,0.5)'},'70%':{boxShadow:'0 0 0 10px rgba(236,72,153,0)'},'100%':{boxShadow:'0 0 0 0 rgba(236,72,153,0)'}},
-            blink:{'0%,100%':{opacity:1},'50%':{opacity:0}},
-            floatBlob:{'0%,100%':{transform:'translateY(0) scale(1)'},'50%':{transform:'translateY(-22px) scale(1.05)'}},
-            viewIn:{'0%':{opacity:0,transform:'translateY(14px) scale(.99)'},'100%':{opacity:1,transform:'none'}},
-            logoPulse:{'0%,100%':{transform:'scale(1)',filter:'drop-shadow(0 0 6px rgba(236,72,153,.35))'},'50%':{transform:'scale(1.08)',filter:'drop-shadow(0 0 14px rgba(236,72,153,.6))'}},
-            logoSpin:{'0%':{transform:'rotate(0deg) scale(1)'},'50%':{transform:'rotate(180deg) scale(1.05)'},'100%':{transform:'rotate(360deg) scale(1)'}}
-          },
-          animation: {
-            fadeIn:'fadeIn 0.4s ease-out', slideUp:'slideUp 0.5s ease-out', scaleIn:'scaleIn 0.25s ease-out',
-            pulseRing:'pulseRing 1.8s infinite', blink:'blink 1s step-end infinite', floatBlob:'floatBlob 8s ease-in-out infinite',
-            viewIn:'viewIn 0.45s cubic-bezier(.2,.7,.2,1)', logoPulse:'logoPulse 1.6s ease-in-out infinite', logoSpin:'logoSpin 2s linear infinite'
-          }
+</head>
+<body>
+
+  <!-- ============ AUTH MODAL (Login / Signup / OTP Verify) ============ -->
+  <div id="authModal" class="fixed inset-0 z-50 bg-charcoal/95 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-cream rounded-[2rem] p-6 md:p-8 w-full max-w-md mx-auto shadow-2xl border border-white/20">
+      <div class="flex justify-between items-center mb-6">
+        <h3 id="authTitle" class="text-xl font-bold text-charcoal">Welcome back</h3>
+        <button id="authClose" class="text-charcoal-muted hover:text-charcoal">✕</button>
+      </div>
+
+      <!-- Mode tabs -->
+      <div class="flex gap-1 mb-6">
+        <button id="tabLogin" class="flex-1 py-2.5 rounded-xl text-sm font-medium text-charcoal bg-charcoal-soft">Log in</button>
+        <button id="tabSignup" class="flex-1 py-2.5 rounded-xl text-sm font-medium text-charcoal-muted hover:text-charcoal">Sign up</button>
+      </div>
+
+      <form id="authForm" class="space-y-4">
+        <!-- Name field (signup only) -->
+        <div id="nameField" class="hidden">
+          <label class="block text-xs font-semibold text-charcoal-muted mb-2">Display name</label>
+          <input type="text" id="regName" class="w-full px-4 py-3 rounded-lg border border-charcoal-soft bg-white focus:border-orange outline-none text-sm">
+        </div>
+
+        <!-- Email -->
+        <div>
+          <label class="block text-xs font-semibold text-charcoal-muted mb-2">Email</label>
+          <input type="email" id="authEmail" class="w-full px-4 py-3 rounded-lg border border-charcoal-soft bg-white focus:border-orange outline-none text-sm">
+        </div>
+
+        <!-- Password -->
+        <div id="passwordField">
+          <label class="block text-xs font-semibold text-charcoal-muted mb-2">Password</label>
+          <input type="password" id="authPass" class="w-full px-4 py-3 rounded-lg border border-charcoal-soft bg-white focus:border-orange outline-none text-sm">
+        </div>
+
+        <p id="authError" class="text-xs text-red-500 hidden"></p>
+
+        <button type="submit" id="authSubmit" class="w-full btn btn-primary btn-sm">Continue</button>
+      </form>
+
+      <p class="text-center text-xs text-charcoal-muted mt-4">
+        Don't have an account?
+        <span id="switchToSignup" class="text-orange cursor-pointer">Sign up</span>
+      </p>
+    </div>
+  </div>
+
+  <!-- OTP VERIFY MODAL -->
+  <div id="otpModal" class="fixed inset-0 z-50 bg-charcoal/95 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-cream rounded-[2rem] p-6 md:p-8 w-full max-w-md mx-auto shadow-2xl border border-white/20 text-center">
+      <div class="w-12 h-12 rounded-full bg-orange/10 flex items-center justify-center mx-auto mb-4">
+        <i data-lucide="mail-check" class="w-6 h-6 text-orange"></i>
+      </div>
+      <h3 class="text-xl font-bold text-charcoal mb-1">Verify your email</h3>
+      <p id="otpEmail" class="text-xs text-charcoal-muted mb-5"></p>
+
+      <!-- OTP boxes -->
+      <div id="otpRow" class="flex justify-center gap-2 mb-6">
+        <input class="otp-box w-8 h-10 rounded-xl text-center text-xl font-bold border border-charcoal-soft bg-white focus:border-orange outline-none" type="text" inputmode="numeric" maxlength="1">
+        <input class="otp-box w-8 h-10 rounded-xl text-center text-xl font-bold border border-charcoal-soft bg-white focus:border-orange outline-none" type="text" inputmode="numeric" maxlength="1">
+        <input class="otp-box w-8 h-10 rounded-xl text-center text-xl font-bold border border-charcoal-soft bg-white focus:border-orange outline-none" type="text" inputmode="numeric" maxlength="1">
+        <input class="otp-box w-8 h-10 rounded-xl text-center text-xl font-bold border border-charcoal-soft bg-white focus:border-orange outline-none" type="text" inputmode="numeric" maxlength="1">
+        <input class="otp-box w-8 h-10 rounded-xl text-center text-xl font-bold border border-charcoal-soft bg-white focus:border-orange outline-none" type="text" inputmode="numeric" maxlength="1">
+        <input class="otp-box w-8 h-10 rounded-xl text-center text-xl font-bold border border-charcoal-soft bg-white focus:border-orange outline-none" type="text" inputmode="numeric" maxlength="1">
+      </div>
+
+      <button id="otpVerifyBtn" class="w-full btn btn-primary btn-sm mb-4 disabled:opacity-50 disabled:cursor-not-allowed">Verify</button>
+      <button id="otpResendBtn" class="w-full btn btn-outline btn-sm text-xs py-2">Resend code (<span id="otpCd">45</span>s)</button>
+
+      <p id="otpDebug" class="text-xs text-orange mt-3 hidden"></p>
+      <p id="otpError" class="text-xs text-red-500 hidden mt-2"></p>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="#" class="nav-logo" onclick="app.goHome()">ottle.<span class="dot"></span></a>
+
+      <ul class="nav-menu hidden md:flex">
+        <li><a href="#" class="nav-link" onclick="app.goHome()">Home</a></li>
+        <li><a href="#" class="nav-link" onclick="app.goBooks()">Books</a></li>
+        <li><a href="#" class="nav-link" onclick="app.goCommunity()">Community</a></li>
+        <li><a href="#" class="nav-link" onclick="app.goAbout()">About</a></li>
+      </ul>
+
+      <div class="nav-actions flex items-center gap-2">
+        <div class="relative w-64 md:w-80 hidden md:block">
+          <i data-lucide="search" class="search-icon"></i>
+          <input type="text" placeholder="Search books, writers, topics…" class="search-input" id="globalSearch">
+        </div>
+        <button id="navAuthBtn" class="btn btn-outline btn-sm">Log in</button>
+        <button id="navProfileBtn" class="btn-icon hidden" onclick="app.toggleProfileMenu()">
+          <i data-lucide="menu" class="w-5 h-5"></i>
+        </button>
+        <button class="mobile-menu-btn" onclick="app.toggleMobileMenu()" aria-label="Menu">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="mobile-menu-overlay hidden" onclick="app.toggleMobileMenu()"></div>
+  <div class="mobile-menu hidden fixed inset-0 z-[110] bg-charcoal p-4">
+    <nav class="space-y-1 mb-6">
+      <a href="#" onclick="app.goHome(); app.toggleMobileMenu()" class="block px-4 py-3 rounded-lg hover:bg-charcoal-soft transition text-cream font-medium">Home</a>
+      <a href="#" onclick="app.goBooks(); app.toggleMobileMenu()" class="block px-4 py-3 rounded-lg hover:bg-charcoal-soft transition text-cream font-medium">Books</a>
+      <a href="#" onclick="app.goCommunity(); app.toggleMobileMenu()" class="block px-4 py-3 rounded-lg hover:bg-charcoal-soft transition text-cream font-medium">Community</a>
+      <a href="#" onclick="app.goAbout(); app.toggleMobileMenu()" class="block px-4 py-3 rounded-lg hover:bg-charcoal-soft transition text-cream font-medium">About</a>
+    </nav>
+    <div class="p-4 border-t border-border-dark mt-4 space-y-2">
+      <button id="mobAuthBtn" class="w-full btn btn-outline btn-sm">Log in</button>
+      <button id="mobProfileBtn" class="w-full btn btn-ghost btn-sm text-cream hover:bg-charcoal-soft hidden">Profile</button>
+    </div>
+  </div>
+
+  <!-- ============ APP ============ -->
+  <main id="appContainer" class="min-h-screen bg-charcoal text-cream">
+
+    <!-- Landing -->
+    <section id="landingView" class="py-12 md:py-20">
+      <div class="container">
+        <div class="hero-content max-w-3xl text-center mx-auto">
+          <span class="hero-kicker">Independent storytellers · Real readers · A growing community</span>
+          <h1>Publish.<br>Read.<br><span class="text-orange">Connect.</span></h1>
+          <p class="mt-6 mb-8 text-lg text-charcoal-muted max-w-2xl mx-auto">Write your story. Share your ideas. Discover new worlds. Build your community.</p>
+          <div class="flex flex-col sm:flex-row gap-3 justify-center">
+            <button onclick="app.openAuth('login')" class="btn btn-primary btn-lg">Start Writing</button>
+            <button onclick="app.goBooks()" class="btn btn-outline btn-lg">Explore Books</button>
+          </div>
+          <p class="mt-8 text-xs text-charcoal-muted/60">Join 10,000+ readers and writers</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- App Dashboard (logged in) -->
+    <section id="appView" class="hidden py-6 md:py-10">
+      <div class="container">
+        <header class="flex items-center justify-between mb-8">
+          <div>
+            <h2 id="pageTitle" class="text-2xl font-bold">Dashboard</h2>
+            <p id="pageSubtitle" class="text-charcoal-muted text-sm">Welcome back</p>
+          </div>
+          <div class="flex items-center gap-3">
+            <div id="navUserAvatar" class="w-9 h-9 rounded-full bg-orange flex items-center justify-center text-charcoal font-bold text-sm border border-charcoal-soft"></div>
+            <span id="navUserName" class="text-sm font-medium hidden sm:block"></span>
+          </div>
+        </header>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
+          <div class="stat-card"><div class="stat-value" id="statBooks">0</div><div class="stat-label">Books</div></div>
+          <div class="stat-card"><div class="stat-value" id="statReads">0</div><div class="stat-label">Total Reads</div></div>
+          <div class="stat-card"><div class="stat-value" id="statFollowers">0</div><div class="stat-label">Followers</div></div>
+          <div class="stat-card"><div class="stat-value" id="statCoins">0</div><div class="stat-label">Coins</div></div>
+        </div>
+
+        <div class="tabs mb-6">
+          <button class="tab-btn active" onclick="app.setTab('dashboard')">Dashboard</button>
+          <button class="tab-btn" onclick="app.setTab('mybooks')">My Books</button>
+          <button class="tab-btn" onclick="app.setTab('myposts')">My Posts</button>
+          <button class="tab-btn" onclick="app.setTab('community')">Community</button>
+        </div>
+        <div id="tabContent">
+          <div class="text-center py-20 text-charcoal-muted">
+            <i data-lucide="layout-dashboard" class="w-12 h-12 mx-auto mb-3 opacity-50"></i>
+            <p>Dashboard coming soon — explore books below!</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Public Books -->
+    <section id="publicBooks" class="py-12 md:py-20 border-t border-charcoal-soft">
+      <div class="container">
+        <div class="flex items-center justify-between mb-8">
+          <h2 class="text-2xl font-bold">Discover Great Books</h2>
+        </div>
+        <div id="publicBooksGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
+          <div class="col-span-full text-center py-10 text-charcoal-muted">Loading books…</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="border-t border-charcoal-soft bg-charcoal-panel py-10">
+      <div class="container text-center text-sm text-charcoal-muted">
+        <div class="mb-4 flex justify-center"><a href="#" class="nav-logo" style="font-size: 1.25rem;">ottle.<span class="dot"></span></a></div>
+        <p>Publish. Read. Connect. — Independent storytelling platform.</p>
+      </div>
+    </footer>
+  </main>
+
+  <script type="module">
+    /* ---------- Config ---------- */
+    const API_BASE = ""; // same origin: http://localhost:1223
+
+    /* ---------- State ---------- */
+    const state = {
+      user: null,
+      profile: null,
+      otpEmail: "",
+      otpCodeTimer: null,
+      otpSeconds: 45,
+    };
+
+    /* ---------- Elements ---------- */
+    const $ = (s, r=document) => r.querySelector(s);
+    const authModal = $("#authModal");
+    const otpModal = $("#otpModal");
+    const authTitle = $("#authTitle");
+    const authForm = $("#authForm");
+    const authSubmit = $("#authSubmit");
+    const authError = $("#authError");
+    const navAuthBtn = $("#navAuthBtn");
+    const navProfileBtn = $("#navProfileBtn");
+    const mobAuthBtn = $("#mobAuthBtn");
+    const mobProfileBtn = $("#mobProfileBtn");
+
+    /* ---------- Helpers ---------- */
+    function showModal(m) { m.classList.remove("hidden"); }
+    function hideModal(m) { m.classList.add("hidden"); }
+    function toast(msg) {
+      let t = $("#ottleToast");
+      if (!t) { t = document.createElement("div"); t.id="ottleToast"; t.className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-charcoal text-cream px-4 py-3 rounded-lg shadow-lg border border-white/20 z-50 hidden"; document.body.appendChild(t); }
+      t.textContent = msg; t.classList.remove("hidden"); setTimeout(()=>t.classList.add("hidden"), 2500);
+    }
+
+    /* ---------- Auth: Login/Signup ---------- */
+    window.app = {
+      goHome(){ $("#landingView").classList.remove("hidden"); $("#appView").classList.add("hidden"); },
+      goBooks(){ $("#landingView").classList.add("hidden"); $("#appView").classList.add("hidden"); },
+      goCommunity(){ $("#landingView").classList.add("hidden"); $("#appView").classList.add("hidden"); },
+      goAbout(){ $("#landingView").classList.add("hidden"); $("#appView").classList.add("hidden"); },
+      setTab(t){ console.log("tab", t); },
+      toggleProfileMenu(){},
+      toggleMobileMenu(){
+        const m=$(".mobile-menu"); const o=$(".mobile-menu-overlay");
+        m.classList.toggle("hidden"); o.classList.toggle("hidden");
+      },
+      openAuth(mode="login"){
+        $("#nameField").classList.toggle("hidden", mode!=="signup");
+        authTitle.textContent = mode==="signup" ? "Create account" : "Welcome back";
+        authSubmit.textContent = mode==="signup" ? "Create account" : "Continue";
+        authError.classList.add("hidden");
+        showModal(authModal);
+      }
+    };
+
+    // Tab switching
+    $("#tabLogin").onclick = () => { $("#tabLogin").className="flex-1 py-2.5 rounded-xl text-sm font-medium text-charcoal bg-charcoal-soft"; $("#tabSignup").className="flex-1 py-2.5 rounded-xl text-sm font-medium text-charcoal-muted hover:text-charcoal"; $("#nameField").classList.add("hidden"); authTitle.textContent="Welcome back"; authSubmit.textContent="Continue"; };
+    $("#tabSignup").onclick = () => { $("#tabSignup").className="flex-1 py-2.5 rounded-xl text-sm font-medium text-charcoal bg-charcoal-soft"; $("#tabLogin").className="flex-1 py-2.5 rounded-xl text-sm font-medium text-charcoal-muted hover:text-charcoal"; $("#nameField").classList.remove("hidden"); authTitle.textContent="Create account"; authSubmit.textContent="Create account"; };
+
+    $("#switchToSignup").onclick = () => { app.openAuth("signup"); };
+    $("#authClose").onclick = () => hideModal(authModal);
+
+    authForm.onsubmit = async (e) => {
+      e.preventDefault();
+      const email = $("#authEmail").value.trim();
+      const pass = $("#authPass").value.trim();
+      const name = $("#regName") ? $("#regName").value.trim() : "";
+      authSubmit.disabled = true; authSubmit.textContent = "Please wait…";
+      authError.classList.add("hidden");
+
+      try {
+        const isSignup = !$("#nameField").classList.contains("hidden");
+        if (isSignup) {
+          // Signup: create Firebase user, then send OTP via our server
+          const res = await fetch("https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyCWZqodMphE_c3ius68zkyvijjpsZDuf8Q", {
+            method:"POST", headers:{"Content-Type":"application/json"},
+            body: JSON.stringify({ email, password: pass, returnSecureToken: true })
+          });
+          if (!res.ok) { const d = await res.json(); throw new Error(d.error?.message || "Signup failed"); }
+          const d = await res.json();
+          state.user = { uid: d.localId, email };
+          await fetch("https://identitytoolkit.googleapis.com/v1/accounts:update?key=AIzaSyCWZqodMphE_c3ius68zkyvijjpsZDuf8Q", {
+            method:"POST", headers:{"Content-Type":"application/json"},
+            body: JSON.stringify({ idToken: d.idToken, displayName: name || email.split("@")[0], returnSecureToken: true })
+          });
+        } else {
+          // Login
+          const res = await fetch("https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyCWZqodMphE_c3ius68zkyvijjpsZDuf8Q", {
+            method:"POST", headers:{"Content-Type":"application/json"},
+            body: JSON.stringify({ email, password: pass, returnSecureToken: true })
+          });
+          if (!res.ok) { const d = await res.json(); throw new Error(d.error?.message || "Login failed"); }
+          const d = await res.json();
+          state.user = { uid: d.localId, email };
         }
+
+        // Now send OTP via our server
+        hideModal(authModal);
+        showOtpModal(email);
+      } catch (err) {
+        authError.textContent = err.message || "Authentication failed";
+        authError.classList.remove("hidden");
+      } finally {
+        authSubmit.disabled = false; authSubmit.textContent = $("#nameField").classList.contains("hidden") ? "Continue" : "Create account";
+      }
+    };
+
+    /* ---------- OTP Flow ---------- */
+    function showOtpModal(email) {
+      state.otpEmail = email;
+      $("#otpEmail").textContent = email;
+      $("#otpDebug").classList.add("hidden");
+      $("#otpError").classList.add("hidden");
+      $("#otpVerifyBtn").disabled = false;
+      resetOtpBoxes();
+      startOtpTimer();
+      sendOtp(email);
+      showModal(otpModal);
+    }
+
+    async function sendOtp(email) {
+      try {
+        const r = await fetch(`${API_BASE}/api/email/send-code`, {
+          method:"POST", headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({ email })
+        });
+        const d = await r.json();
+        if (d._debug_code) {
+          $("#otpDebug").textContent = `Demo code: ${d._debug_code} (check console + demo_codes.log)`;
+          $("#otpDebug").classList.remove("hidden");
+        }
+        if (!d.sent) throw new Error(d.message || "Could not send code");
+        toast("Code sent");
+      } catch (err) {
+        toast("Could not send code — check server");
       }
     }
-  </script>
-  <link rel="manifest" href="./manifest.json" />
-  <link rel="stylesheet" href="./css/styles.css" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://checkout.razorpay.com/v1/checkout.js" defer></script>
-</head>
-<body class="bg-cream-100 text-navy-900 dark:bg-navy-950 dark:text-cream-100 theme-transition min-h-screen font-sans">
-  <div id="root"></div>
-  <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] hidden"></div>
-  <noscript><p style="text-align:center;padding:2rem">Ottle needs JavaScript enabled — the platform for independent storytellers to publish, read and connect.</p></noscript>
-  <script>
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("./sw.js").then(() => console.log("✅ Ottle SW registered")).catch(() => {});
+
+    function startOtpTimer() {
+      state.otpSeconds = 45;
+      $("#otpCd").textContent = "45";
+      $("#otpResendBtn").disabled = true;
+      if (state.otpCodeTimer) clearInterval(state.otpCodeTimer);
+      state.otpCodeTimer = setInterval(() => {
+        state.otpSeconds--;
+        $("#otpCd").textContent = String(state.otpSeconds);
+        if (state.otpSeconds <= 0) {
+          clearInterval(state.otpCodeTimer);
+          $("#otpResendBtn").disabled = false;
+          $("#otpCd").textContent = "0";
+        }
+      }, 1000);
     }
+
+    $("#otpResendBtn").onclick = async () => {
+      sendOtp(state.otpEmail);
+      startOtpTimer();
+    };
+
+    function resetOtpBoxes() {
+      $("#otpRow").querySelectorAll("input").forEach((el,i)=>{
+        el.value = "";
+        el.disabled = false;
+        if (i===0) el.focus();
+      });
+      $("#otpRow").querySelectorAll("input").forEach((el,idx)=>{
+        el.oninput = () => { el.value = el.value.replace(/\D/g,"").slice(-1); if(el.value && idx<5) $("#otpRow").querySelectorAll("input")[idx+1].focus(); checkOtpComplete(); };
+        el.onkeydown = (e) => { if(e.key==="Backspace" && !el.value && idx>0) $("#otpRow").querySelectorAll("input")[idx-1].focus(); };
+      });
+    }
+
+    function checkOtpComplete() {
+      const boxes = $("#otpRow").querySelectorAll("input");
+      const code = Array.from(boxes).map(b=>b.value).join("");
+      $("#otpVerifyBtn").disabled = code.length !== 6;
+    }
+
+    $("#otpVerifyBtn").onclick = async () => {
+      const code = Array.from($("#otpRow").querySelectorAll("input")).map(b=>b.value).join("");
+      if (code.length !== 6) return;
+      $("#otpVerifyBtn").disabled = true;
+      $("#otpVerifyBtn").textContent = "Verifying…";
+      try {
+        const r = await fetch(`${API_BASE}/api/email/verify-code`, {
+          method:"POST", headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({ email: state.otpEmail, code })
+        });
+        const d = await r.json();
+        if (d.ok) {
+          hideModal(otpModal);
+          toast("Email verified!");
+          // Update UI for logged in
+          updateUiLoggedIn();
+        } else {
+          $("#otpError").textContent = d.message || "Verification failed";
+          $("#otpError").classList.remove("hidden");
+          $("#otpVerifyBtn").disabled = false;
+          $("#otpVerifyBtn").textContent = "Verify";
+        }
+      } catch (err) {
+        toast("Verification error");
+        $("#otpVerifyBtn").disabled = false;
+        $("#otpVerifyBtn").textContent = "Verify";
+      }
+    };
+
+    function updateUiLoggedIn() {
+      $("#landingView").classList.add("hidden");
+      $("#appView").classList.remove("hidden");
+      $("#navAuthBtn").classList.add("hidden");
+      $("#navProfileBtn").classList.remove("hidden");
+      $("#mobAuthBtn").classList.add("hidden");
+      $("#mobProfileBtn").classList.remove("hidden");
+      const initial = (state.user.email || "U").split("@")[0][0]?.toUpperCase();
+      $("#navUserAvatar").textContent = initial;
+      $("#navUserName").textContent = state.user.email;
+      toast("Logged in");
+    }
+
+    /* ---------- Nav ---------- */
+    $("#navAuthBtn").onclick = () => app.openAuth("login");
+    $("#mobAuthBtn").onclick = () => { app.openAuth("login"); app.toggleMobileMenu(); };
+
+    /* ---------- Init public books ---------- */
+    async function loadPublicBooks() {
+      try {
+        // In production this calls Firestore; for now show placeholder
+        const grid = $("#publicBooksGrid");
+        grid.innerHTML = `<div class="col-span-full text-center py-10 text-charcoal-muted">No books yet — sign up and publish your first book!</div>`;
+      } catch (_) {}
+    }
+    loadPublicBooks();
+
   </script>
-  <script type="module" src="./js/app.js"></script>
 </body>
 </html>
